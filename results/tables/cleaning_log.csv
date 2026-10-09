@@ -8,4 +8,5 @@ step,description,n_sequences,n_species,removed
 6_ambiguous_bases,<= 5% non-ACGT bases,1776,55,4
 7_length,600-700 bp,1592,54,184
 8_dedup,one copy of each identical sequence per species,798,54,794
-9_min_seqs,>= 3 sequences per species,784,45,14
+9_outliers,nearest other sequence <= 0.1 K2P,791,52,7
+10_min_seqs,>= 3 sequences per species,779,45,12

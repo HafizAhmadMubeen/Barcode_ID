@@ -23,10 +23,14 @@ Accuracy on known species is not the point. The contribution is the comparison u
 - **Final scope (decided 2026-10-09, Phase 1):** families **Libellulidae + Coenagrionidae**, specimens from **Europe** (the 30 European countries with Odonata records on BOLD, listed in `config.py` as `EUROPE_COUNTRIES`; Russia and Turkey excluded). Reason: full Odonata is far too large, and two families with many multi-species genera (Sympetrum, Ischnura, Coenagrion) give Condition B real close relatives.
 - **Real BOLD counts (v5 portal summary API, 2026-10-09, before cleaning):** all Odonata 2,434 species / 25,245 COI-5P records; European Odonata 120 species (105 with ≥3 records, 3,273 records); European Libellulidae 30 species (26 with ≥3, 810 records); European Coenagrionidae 25 species (24 with ≥3, 1,043 records). Chosen scope: about 55 species, 50 with ≥3 records, about 1,850 records.
 - **Cleaning rules (decided 2026-10-09, Phase 1):** sequences over 700 bp are trimmed to the barcode region (local alignment to each family's most common 658 bp sequence), then lengths 600–700 bp are kept. A record is dropped as a misID only if its BIN's majority species is in a different genus (2 records); barcode sharing within a genus (Coenagrion puella/pulchellum/ornatum, Ischnura elegans group) is kept as real biology. Ambiguity filter counts every non-ACGT base. Dedup is within species.
-- **Final dataset (Phase 1):** 784 sequences, 45 species (22 Coenagrionidae, 23 Libellulidae), 14 genera; 3–60 sequences per species (median 10); 166 sequences were trimmed. 6 identical sequences carry two different species labels (within-genus barcode sharing), so some Condition A errors are unavoidable for both methods. Full counts per step: `results/tables/cleaning_log.csv`.
+- **Outlier filter (decided 2026-10-09, Phase 2):** after dedup, drop a sequence whose nearest other sequence (any species) is more than 0.10 K2P away. No sequence falls between 0.08 and 0.15, so 0.10 sits in an empty gap. Removed 7 (5 likely contaminants plus 2 single-specimen genera that the ≥3 filter would drop anyway); no species lost. List: `results/tables/removed_outliers.csv`.
+- **Final dataset:** 779 sequences, 45 species (22 Coenagrionidae, 23 Libellulidae), 14 genera; 166 sequences were trimmed. Within-genus barcode sharing (Coenagrion puella/pulchellum/ornatum, Ischnura elegans/genei/saharensis, Sympetrum sanguineum/striolatum) makes some Condition A errors unavoidable for both methods. Full counts per step: `results/tables/cleaning_log.csv`.
+- **Condition A split (decided 2026-10-09, Phase 2):** within each species, 70/30 train/test, at least 1 test and 2 train per species, SEED 42. Saved once in `data/processed/split_A.csv` (543 train / 236 test) and shared by NJ and ML.
+- **NJ method (decided 2026-10-09, Phase 2):** K2P distances; one Biopython NJ tree containing all training sequences plus all test queries (query labels never used), midpoint-rooted. One tree per query was ruled out: Biopython NJ takes ~4 min for 779 sequences.
+- **NJ identification rule (decided 2026-10-09, Phase 2):** a query gets the species of the training sequences in the smallest clade that contains it and at least one training sequence; if that clade holds more than one training species, the query is "ambiguous" (with a genus if they share one).
+- **Phase 2 result:** NJ Condition A accuracy 92.4% (218/236), 3.4% ambiguous, 4.2% wrong species, 100% correct genus. All 18 non-correct queries fall in the barcode-sharing groups above.
 
 ## Still open
-- Exact rule that turns a tree position into a species prediction (Phase 2).
 - Confidence threshold for flagging "unknown" in ML (Phase 3).
 - Which species to hold out for Condition B (Phase 4).
 
@@ -74,7 +78,9 @@ barcodeid/
 ├── src/
 │   ├── download_bold.py       # fetch raw BOLD TSVs (all European Odonata) into data/raw/
 │   ├── data_cleaning.py
-│   ├── alignment.py
+│   ├── alignment.py           # MAFFT alignment
+│   ├── distances.py           # K2P distance matrix (shared)
+│   ├── splits.py              # saved train/test splits (Condition A, later B)
 │   ├── phylo_baseline.py
 │   ├── features.py
 │   ├── ml_classifiers.py
@@ -92,7 +98,7 @@ barcodeid/
 - [x] Phase 0: taxon chosen (Odonata)
 - [x] Phase 0: repo and environment set up
 - [x] Phase 1: data acquisition and cleaning
-- [ ] Phase 2: phylogenetic baseline
+- [x] Phase 2: phylogenetic baseline
 - [ ] Phase 3: ML classifiers
 - [ ] Phase 4: Condition A and B experiment
 - [ ] Phase 5: evaluation and plots

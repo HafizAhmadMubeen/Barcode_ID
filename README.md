@@ -27,6 +27,9 @@ Run each step from the repo root, in order:
 ```bash
 python src/download_bold.py    # raw BOLD data -> data/raw/ (skips files already downloaded)
 python src/data_cleaning.py    # -> data/processed/clean.fasta, metadata.csv, results/tables/cleaning_log.csv
+python src/alignment.py        # -> data/processed/aligned.fasta (MAFFT, cached)
+python src/splits.py           # -> data/processed/split_A.csv (made once, never regenerated)
+python src/phylo_baseline.py   # -> results/nj_tree.nwk, results/tables/nj_predictions_A.csv (~4 min first run)
 ```
 
 ## Layout

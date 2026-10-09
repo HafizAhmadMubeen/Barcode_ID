@@ -279,7 +279,6 @@ GBMH3421-07,Erythromma najas,Erythromma,Coenagrionidae,BOLD:AAA4234,Ukraine,615,
 GBMH3434-07,Erythromma najas,Erythromma,Coenagrionidae,BOLD:AAA4234,Belarus,615,True
 GBMH6702-09,Erythromma najas,Erythromma,Coenagrionidae,BOLD:AAA4234,United Kingdom,615,True
 LEFIJ15499-21,Erythromma najas,Erythromma,Coenagrionidae,BOLD:AAA4234,Finland,653,False
-LEFIJ15500-21,Erythromma najas,Erythromma,Coenagrionidae,BOLD:AEM0825,Finland,658,False
 LEFIJ15501-21,Erythromma najas,Erythromma,Coenagrionidae,BOLD:AAA4234,Finland,653,False
 LEFIJ7810-18,Erythromma najas,Erythromma,Coenagrionidae,BOLD:AAA4234,Finland,655,False
 ODOBP5367-16,Erythromma najas,Erythromma,Coenagrionidae,BOLD:AAA4234,Netherlands,658,False
@@ -458,7 +457,6 @@ AODON275-20,Crocothemis erythraea,Crocothemis,Libellulidae,BOLD:AEX9418,Austria,
 AODON371-20,Crocothemis erythraea,Crocothemis,Libellulidae,BOLD:AEX9418,Austria,657,True
 AODON373-20,Crocothemis erythraea,Crocothemis,Libellulidae,BOLD:AEX9418,Austria,657,True
 FBAQU312-09,Crocothemis erythraea,Crocothemis,Libellulidae,BOLD:AEX9418,Germany,658,False
-GBAAW80743-24,Crocothemis erythraea,Crocothemis,Libellulidae,,Portugal,649,False
 GBAAW80744-24,Crocothemis erythraea,Crocothemis,Libellulidae,BOLD:AEX9418,Portugal,627,False
 GBAAW80745-24,Crocothemis erythraea,Crocothemis,Libellulidae,BOLD:AEX9418,Portugal,631,False
 GBEPT947-14,Crocothemis erythraea,Crocothemis,Libellulidae,BOLD:AEX9418,Austria,633,False
@@ -690,7 +688,6 @@ ODOBP3557-16,Sympetrum fonscolombii,Sympetrum,Libellulidae,BOLD:AAI0218,Spain,65
 PLSW086-20,Sympetrum fonscolombii,Sympetrum,Libellulidae,BOLD:AAI0218,Poland,658,False
 PLSW087-20,Sympetrum fonscolombii,Sympetrum,Libellulidae,BOLD:AAI0218,Poland,658,False
 PLSW088-20,Sympetrum fonscolombii,Sympetrum,Libellulidae,BOLD:AAI0218,Poland,658,False
-UMAAI1417-22,Sympetrum fonscolombii,Sympetrum,Libellulidae,,France,641,False
 AODON372-20,Sympetrum meridionale,Sympetrum,Libellulidae,BOLD:AAD8296,Austria,657,True
 AODON374-20,Sympetrum meridionale,Sympetrum,Libellulidae,BOLD:AAD8296,Austria,657,True
 AODON377-20,Sympetrum meridionale,Sympetrum,Libellulidae,BOLD:AAD8296,Austria,657,True
@@ -709,7 +706,6 @@ AODON141-20,Sympetrum pedemontanum,Sympetrum,Libellulidae,BOLD:AAK1022,Austria,6
 AODON300-20,Sympetrum pedemontanum,Sympetrum,Libellulidae,BOLD:AAK1022,Austria,658,True
 AODON876-22,Sympetrum pedemontanum,Sympetrum,Libellulidae,BOLD:AAK1022,Austria,644,False
 AODON878-22,Sympetrum pedemontanum,Sympetrum,Libellulidae,BOLD:AAK1022,Austria,613,False
-GBMIX944-14,Sympetrum pedemontanum,Sympetrum,Libellulidae,,Germany,633,False
 ZPLOD781-20,Sympetrum pedemontanum,Sympetrum,Libellulidae,BOLD:AAK1022,Italy,658,False
 AODON091-20,Sympetrum sanguineum,Sympetrum,Libellulidae,BOLD:AAB2237,Austria,657,True
 AODON112-20,Sympetrum sanguineum,Sympetrum,Libellulidae,BOLD:AAB2237,Austria,657,True
@@ -748,7 +744,6 @@ FBAQU325-09,Sympetrum striolatum,Sympetrum,Libellulidae,BOLD:AAB2236,Germany,658
 FBAQU519-10,Sympetrum striolatum,Sympetrum,Libellulidae,BOLD:AAB2236,Germany,641,False
 GBAAW72239-24,Sympetrum striolatum,Sympetrum,Libellulidae,BOLD:AAB2236,Portugal,640,False
 GBAAW72240-24,Sympetrum striolatum,Sympetrum,Libellulidae,BOLD:AAB2236,Portugal,637,False
-LEFIJ29526-22,Sympetrum striolatum,Sympetrum,Libellulidae,BOLD:AFG1851,Finland,651,False
 ODOBP9073-23,Sympetrum striolatum,Sympetrum,Libellulidae,BOLD:AAB2236,Netherlands,658,False
 ODOBP9074-23,Sympetrum striolatum,Sympetrum,Libellulidae,BOLD:AAB2236,Netherlands,658,False
 TRDOD086-14,Sympetrum striolatum,Sympetrum,Libellulidae,BOLD:AAB2236,Norway,658,False

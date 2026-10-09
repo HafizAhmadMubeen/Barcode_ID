@@ -40,7 +40,7 @@ Record final answers here once decided — don't leave open items unresolved pas
 - **Source:** BOLD Systems Public Data Portal (https://www.boldsystems.org) — free, no login.
 - **Format:** FASTA sequences (COI gene, ~650bp) + taxonomy metadata (species, genus, family).
 - **Taxon:** Odonata (dragonflies and damselflies) — full European set or a narrower family/region, to be confirmed in Phase 1 against actual BOLD numbers. Target ~30–80 species, ~500–2000 sequences total.
-- **Split strategy:** split by species (not by sequence) into train/test to avoid data leakage — a sequence from a species must not appear in both train and test just because a different individual of that species is in train.
+- **Split strategy:** Condition A splits *within* each species (70/30, `data/processed/split_A.csv`), so every test species has training sequences; leakage is prevented by deduplicating identical sequences within species, so no identical sequence of a species sits on both sides. Condition B additionally holds whole species out of training (Phase 4).
 - **Condition B specifically requires:** a subset of species held out entirely from training (not just from test-within-species), so the pipeline needs two distinct split functions, not one.
 
 ---
@@ -53,13 +53,14 @@ Record final answers here once decided — don't leave open items unresolved pas
 - Trim to a consistent barcode region/length window.
 - Deduplicate identical sequences.
 - Log sequence/species counts before and after each cleaning step (for traceability and for the report's data section).
-- **As implemented (Phase 1):** `src/download_bold.py` fetches all European Odonata per country; `src/data_cleaning.py` keeps COI-5P from the two target families, drops unnamed records and cross-genus BIN misIDs, trims sequences over 700 bp to the barcode region, drops >5% non-ACGT, keeps 600–700 bp, dedups within species, and drops species with <3 sequences. Result: 784 sequences, 45 species.
+- **As implemented (Phase 1):** `src/download_bold.py` fetches all European Odonata per country; `src/data_cleaning.py` keeps COI-5P from the two target families, drops unnamed records and cross-genus BIN misIDs, trims sequences over 700 bp to the barcode region, drops >5% non-ACGT, keeps 600–700 bp, dedups within species, drops outliers with no relative within 0.10 K2P (added in Phase 2), and drops species with <3 sequences. Result: 779 sequences, 45 species.
 
 ### 5.2 Phylogenetic baseline
 - Multiple sequence alignment via MAFFT.
 - Build a Neighbor-Joining tree (Biopython `Phylo`).
 - Optional stretch: Maximum Likelihood tree (IQ-TREE or RAxML) as a stronger baseline.
-- **Identification rule:** a query is "identified" as species X if it clusters within X's clade on the tree. This rule needs a precise, code-implementable definition (e.g., nearest-neighbor leaf by tree distance, or smallest enclosing clade with a single species label) — decide and document this exactly, since "clusters within" is otherwise unfalsifiable.
+- **Identification rule (decided Phase 2):** a query is assigned the species of the training sequences in the smallest clade that contains the query and at least one training sequence; if that clade holds training sequences of more than one species, the query is "ambiguous" (and gets a genus if those species share one).
+- **As implemented (Phase 2):** K2P distances (`src/distances.py`), one Biopython NJ tree of all training sequences plus all test queries (query labels never used), midpoint-rooted, cached at `results/nj_tree.nwk`. Condition A: 92.4% correct, 3.4% ambiguous, 4.2% wrong species, 100% correct genus (236 queries).
 
 ### 5.3 ML classifiers
 - Feature extraction: k-mer frequency vectors, k=4 and k=6 (compare both).
@@ -106,7 +107,9 @@ barcodeid/
 ├── src/
 │   ├── download_bold.py       # fetch raw BOLD TSVs (all European Odonata) into data/raw/
 │   ├── data_cleaning.py
-│   ├── alignment.py
+│   ├── alignment.py           # MAFFT alignment
+│   ├── distances.py           # K2P distance matrix (shared)
+│   ├── splits.py              # saved train/test splits (Condition A, later B)
 │   ├── phylo_baseline.py
 │   ├── features.py
 │   ├── ml_classifiers.py

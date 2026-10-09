@@ -15,7 +15,10 @@ filters in order, logging the sequence and species count after each one:
   6. ambiguous bases: drop sequences with > 5% non-ACGT characters
   7. length: keep 600-700 bp
   8. deduplicate: keep one copy of each identical sequence per species
-  9. drop species with fewer than 3 sequences
+  9. outliers: align with MAFFT and drop a sequence whose nearest other
+     sequence (any species) is more than 10% K2P away. Real barcodes always
+     have a close relative here; these are likely contamination or wrong genes.
+ 10. drop species with fewer than 3 sequences
 
 Output:
   data/processed/clean.fasta            header: ">PROCESSID Genus species"
@@ -23,21 +26,28 @@ Output:
   data/processed/barcode_references.fasta   the reference barcode used for trimming, per family
   results/tables/cleaning_log.csv       counts after every step
   results/tables/removed_misids.csv     records dropped in step 4, with the reason
+  results/tables/removed_outliers.csv   records dropped in step 9, with their distance
 
 Run from the repo root:
     python src/data_cleaning.py
 """
 import sys
+import tempfile
+from io import StringIO
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+from Bio import SeqIO
 from Bio.Align import PairwiseAligner
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from config import (  # noqa: E402
-    MARKER, MAX_LEN, MAX_N_FRACTION, MIN_LEN, MIN_SEQS_PER_SPECIES,
+    MARKER, MAX_LEN, MAX_N_FRACTION, MAX_NN_DISTANCE, MIN_LEN, MIN_SEQS_PER_SPECIES,
     PROCESSED_DIR, RAW_DIR, TABLES_DIR, TARGET_FAMILIES,
 )
+from alignment import mafft_align  # noqa: E402
+from distances import k2p_matrix  # noqa: E402
 
 log = []  # one row per cleaning step
 
@@ -89,6 +99,21 @@ def trim_to_reference(seq, reference, aligner):
     return seq[blocks[0][0]:blocks[-1][1]]
 
 
+def nearest_neighbour_distance(df):
+    """K2P distance from each sequence to its closest other sequence (any species).
+
+    Aligns the sequences with MAFFT in a temporary file (deleted afterwards).
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        fasta = Path(tmp) / "outlier_check.fasta"
+        fasta.write_text("".join(f">{i}\n{s}\n" for i, s in zip(df.processid, df.seq)),
+                         encoding="utf-8")
+        aligned = {r.id: str(r.seq) for r in SeqIO.parse(StringIO(mafft_align(fasta)), "fasta")}
+    D = k2p_matrix([aligned[i] for i in df.processid])
+    np.fill_diagonal(D, np.inf)
+    return pd.Series(D.min(axis=1), index=df.index)
+
+
 def main():
     raw = load_raw()
     record("0_raw", "all downloaded rows (all markers, all families)", raw)
@@ -135,9 +160,15 @@ def main():
     df = df.sort_values("processid").drop_duplicates(["species", "seq"])
     record("8_dedup", "one copy of each identical sequence per species", df)
 
+    # Step 9: outliers with no close relative anywhere in the data.
+    nn = nearest_neighbour_distance(df)
+    outliers = df[nn > MAX_NN_DISTANCE].assign(nearest_k2p=nn[nn > MAX_NN_DISTANCE].round(3))
+    df = df[nn <= MAX_NN_DISTANCE]
+    record("9_outliers", f"nearest other sequence <= {MAX_NN_DISTANCE} K2P", df)
+
     counts = df.species.value_counts()
     df = df[df.species.isin(counts[counts >= MIN_SEQS_PER_SPECIES].index)]
-    record("9_min_seqs", f">= {MIN_SEQS_PER_SPECIES} sequences per species", df)
+    record("10_min_seqs", f">= {MIN_SEQS_PER_SPECIES} sequences per species", df)
 
     # --- Write outputs ---
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
@@ -157,6 +188,8 @@ def main():
     pd.DataFrame(log).to_csv(TABLES_DIR / "cleaning_log.csv", index=False)
     removed[["processid", "species", "genus", "bin_uri", "bin_majority_species"]].to_csv(
         TABLES_DIR / "removed_misids.csv", index=False)
+    outliers[["processid", "species", "genus", "length", "nearest_k2p"]].to_csv(
+        TABLES_DIR / "removed_outliers.csv", index=False)
 
     print(f"\nFinal: {len(df)} sequences, {df.species.nunique()} species, "
           f"{df.genus.nunique()} genera, {df.family.nunique()} families")

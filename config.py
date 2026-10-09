@@ -43,6 +43,15 @@ EUROPE_COUNTRIES = (
 MAX_N_FRACTION = 0.05     # drop sequences with more than 5% ambiguous bases (anything not A/C/G/T)
 MIN_LEN, MAX_LEN = 600, 700  # keep full-length barcodes only (decided in Phase 1)
 MIN_SEQS_PER_SPECIES = 3  # drop species with fewer than 3 sequences (after dedup)
+# Drop a sequence if its nearest other sequence is further than this (K2P).
+# Chosen in Phase 2: no sequence falls between 0.08 and 0.15, so 0.10 sits in that empty gap.
+MAX_NN_DISTANCE = 0.10
+
+# --- Train/test split (Phase 2) ---
+TEST_FRACTION_A = 0.30    # Condition A: ~30% of each species' sequences are test queries
+
+# --- Phylogenetic baseline (Phase 2) ---
+DISTANCE_MODEL = "K2P"    # Kimura 2-parameter distance for the NJ tree
 
 # --- ML settings (Phase 3) ---
 KMER_SIZES = (4, 6)
