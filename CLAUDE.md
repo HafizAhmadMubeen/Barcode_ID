@@ -70,6 +70,7 @@ barcodeid/
 │   ├── raw/                   # untouched BOLD files
 │   └── processed/             # cleaned and aligned sequences
 ├── src/
+│   ├── download_bold.py       # fetch raw BOLD TSVs (all European Odonata) into data/raw/
 │   ├── data_cleaning.py
 │   ├── alignment.py
 │   ├── phylo_baseline.py

@@ -14,3 +14,7 @@ Thumbs.db
 
 # Local tool installs (MAFFT for Windows); each teammate installs their own
 tools/
+
+# Raw BOLD downloads contain collector names and emails: keep them out of git.
+# Re-create with: python src/download_bold.py
+data/raw/*.tsv

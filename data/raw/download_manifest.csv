@@ -1,0 +1,31 @@
+taxon,country,query,file,n_records,download_date
+Odonata,Austria,tax:order:Odonata;geo:country/ocean:Austria,bold_Odonata_Austria.tsv,1759,2026-10-09
+Odonata,Germany,tax:order:Odonata;geo:country/ocean:Germany,bold_Odonata_Germany.tsv,444,2026-10-09
+Odonata,Italy,tax:order:Odonata;geo:country/ocean:Italy,bold_Odonata_Italy.tsv,535,2026-10-09
+Odonata,Montenegro,tax:order:Odonata;geo:country/ocean:Montenegro,bold_Odonata_Montenegro.tsv,333,2026-10-09
+Odonata,Poland,tax:order:Odonata;geo:country/ocean:Poland,bold_Odonata_Poland.tsv,201,2026-10-09
+Odonata,Netherlands,tax:order:Odonata;geo:country/ocean:Netherlands,bold_Odonata_Netherlands.tsv,203,2026-10-09
+Odonata,Norway,tax:order:Odonata;geo:country/ocean:Norway,bold_Odonata_Norway.tsv,107,2026-10-09
+Odonata,Finland,tax:order:Odonata;geo:country/ocean:Finland,bold_Odonata_Finland.tsv,98,2026-10-09
+Odonata,France,tax:order:Odonata;geo:country/ocean:France,bold_Odonata_France.tsv,103,2026-10-09
+Odonata,United Kingdom,tax:order:Odonata;geo:country/ocean:United Kingdom,bold_Odonata_United_Kingdom.tsv,84,2026-10-09
+Odonata,Spain,tax:order:Odonata;geo:country/ocean:Spain,bold_Odonata_Spain.tsv,69,2026-10-09
+Odonata,Greece,tax:order:Odonata;geo:country/ocean:Greece,bold_Odonata_Greece.tsv,76,2026-10-09
+Odonata,Portugal,tax:order:Odonata;geo:country/ocean:Portugal,bold_Odonata_Portugal.tsv,52,2026-10-09
+Odonata,Sweden,tax:order:Odonata;geo:country/ocean:Sweden,bold_Odonata_Sweden.tsv,37,2026-10-09
+Odonata,Croatia,tax:order:Odonata;geo:country/ocean:Croatia,bold_Odonata_Croatia.tsv,25,2026-10-09
+Odonata,Belgium,tax:order:Odonata;geo:country/ocean:Belgium,bold_Odonata_Belgium.tsv,8,2026-10-09
+Odonata,Switzerland,tax:order:Odonata;geo:country/ocean:Switzerland,bold_Odonata_Switzerland.tsv,3,2026-10-09
+Odonata,Denmark,tax:order:Odonata;geo:country/ocean:Denmark,bold_Odonata_Denmark.tsv,55,2026-10-09
+Odonata,Czechia,tax:order:Odonata;geo:country/ocean:Czechia,bold_Odonata_Czechia.tsv,13,2026-10-09
+Odonata,Slovakia,tax:order:Odonata;geo:country/ocean:Slovakia,bold_Odonata_Slovakia.tsv,17,2026-10-09
+Odonata,Hungary,tax:order:Odonata;geo:country/ocean:Hungary,bold_Odonata_Hungary.tsv,45,2026-10-09
+Odonata,Bosnia and Herzegovina,tax:order:Odonata;geo:country/ocean:Bosnia and Herzegovina,bold_Odonata_Bosnia_and_Herzegovina.tsv,14,2026-10-09
+Odonata,Albania,tax:order:Odonata;geo:country/ocean:Albania,bold_Odonata_Albania.tsv,59,2026-10-09
+Odonata,Bulgaria,tax:order:Odonata;geo:country/ocean:Bulgaria,bold_Odonata_Bulgaria.tsv,15,2026-10-09
+Odonata,Romania,tax:order:Odonata;geo:country/ocean:Romania,bold_Odonata_Romania.tsv,17,2026-10-09
+Odonata,Serbia,tax:order:Odonata;geo:country/ocean:Serbia,bold_Odonata_Serbia.tsv,2,2026-10-09
+Odonata,Ukraine,tax:order:Odonata;geo:country/ocean:Ukraine,bold_Odonata_Ukraine.tsv,27,2026-10-09
+Odonata,Belarus,tax:order:Odonata;geo:country/ocean:Belarus,bold_Odonata_Belarus.tsv,64,2026-10-09
+Odonata,Lithuania,tax:order:Odonata;geo:country/ocean:Lithuania,bold_Odonata_Lithuania.tsv,1,2026-10-09
+Odonata,North Macedonia,tax:order:Odonata;geo:country/ocean:North Macedonia,bold_Odonata_North_Macedonia.tsv,11,2026-10-09
