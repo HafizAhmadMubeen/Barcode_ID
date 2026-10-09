@@ -29,7 +29,7 @@ Assign these three roles among the team however works best. Ownership is primary
 - [x] **Taxonomic group — Odonata (dragonflies and damselflies).** Chosen based on a published reference-library study: 103 of 145 recorded European species covered (71%), from 697 COI-barcoded specimens across 274 localities in 16 countries, with >88% of included species reliably identifiable from their barcode alone (Blackman et al., *Coverage and quality of DNA barcode references for Central and Northern European Odonata*, PeerJ, 2021: https://peerj.com/articles/11192/). Sequence count (~697) sits in our target range; species count (103) runs slightly above the 30–80 target — **Phase 1's first task is to pull the actual current BOLD Odonata record count and decide whether to use the full set or narrow to one family (e.g., Libellulidae or Coenagrionidae) or one region.**
 - [x] **Final scope — Libellulidae + Coenagrionidae, Europe** (decided 2026-10-09). Live BOLD counts showed all Odonata at 2,434 species and European Odonata at 120 species / 3,273 records, both over target. The two families from 30 European countries give about 55 species (50 with ≥3 records) and about 1,850 records before cleaning. Country list is in `config.py`; full counts are in CLAUDE.md.
 - [ ] **ML/Maximum Likelihood stretch goal** — decide after Phase 2/3 are stable whether we have time for IQ-TREE/RAxML ML trees and/or SVM, or whether NJ + k-NN/RF is the full scope.
-- [ ] **Confidence threshold for "unknown" flagging** — needs a concrete number/method (e.g., max class probability < threshold) decided during Phase 3, not left implicit.
+- [x] **Confidence threshold for "unknown" flagging** (decided Phase 3): thresholds accept 95% of known-species queries, calibrated by cross-validation on training data only. RF: top class probability below the cut-off; k-NN: distance to the nearest training sequence above the cut-off. Phase 5 adds a sensitivity analysis over at least 3 thresholds.
 
 Record final answers here once decided — don't leave open items unresolved past their phase.
 
@@ -66,6 +66,7 @@ Record final answers here once decided — don't leave open items unresolved pas
 - Feature extraction: k-mer frequency vectors, k=4 and k=6 (compare both).
 - Models: k-NN and Random Forest as primary; SVM as stretch.
 - Standard scikit-learn train/test workflow, fixed random seed everywhere.
+- **As implemented (Phase 3):** `src/features.py` (k-mer frequency matrices), `src/ml_classifiers.py` (k-NN k=5 distance-weighted; RF 500 trees, balanced class weights; chosen by training-only CV). Condition A: k-NN 93.2% (k=4 and k=6), RF 91.5% (k=4) / 92.4% (k=6).
 
 ### 5.4 Core experiment — the actual contribution
 - **Condition A (full coverage):** every test species has training examples. Standard supervised evaluation.
@@ -118,6 +119,7 @@ barcodeid/
 │   └── evaluate.py
 ├── notebooks/
 ├── results/
+│   ├── models/                # saved ML models (git-ignored, re-created by ml_classifiers.py)
 │   ├── figures/
 │   └── tables/
 └── report/

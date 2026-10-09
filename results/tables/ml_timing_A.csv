@@ -1,0 +1,5 @@
+model,k,fit_seconds,predict_seconds_total,predict_ms_per_query
+knn,4,0.0,0.02,0.083
+rf,4,1.14,0.236,0.999
+knn,6,0.02,0.128,0.544
+rf,6,1.08,0.236,1.0

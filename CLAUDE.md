@@ -30,8 +30,12 @@ Accuracy on known species is not the point. The contribution is the comparison u
 - **NJ identification rule (decided 2026-10-09, Phase 2):** a query gets the species of the training sequences in the smallest clade that contains it and at least one training sequence; if that clade holds more than one training species, the query is "ambiguous" (with a genus if they share one).
 - **Phase 2 result:** NJ Condition A accuracy 92.4% (218/236), 3.4% ambiguous, 4.2% wrong species, 100% correct genus. All 18 non-correct queries fall in the barcode-sharing groups above.
 
+- **ML features (Phase 3):** k-mer frequencies from unaligned sequences, k=4 (256 columns) and k=6 (4096 columns); each row sums to 1; windows with non-ACGT bases skipped.
+- **ML models (decided 2026-10-09, Phase 3, from training-only cross-validation):** k-NN with 5 neighbours, distance-weighted; Random Forest with 500 trees, `class_weight="balanced"`, random_state 42.
+- **ML "unknown" rule (decided 2026-10-09, Phase 3):** thresholds accept 95% of known-species queries, calibrated by 2-fold cross-validation repeated 5 times on training data only. RF: unknown if top class probability is below the cut-off (0.466 for k=4, 0.500 for k=6). k-NN: unknown if the distance to the nearest training sequence is above the cut-off (0.0113 for k=4, 0.0124 for k=6). Values in `results/tables/ml_thresholds.csv`.
+- **Phase 3 result (Condition A, 236 queries):** k-NN 93.2% (k=4 and k=6), RF 91.5% (k=4) and 92.4% (k=6); 3.0–4.2% of known queries flagged unknown. Every error is within the barcode-sharing groups; no wrong genus. Identical results on re-run.
+
 ## Still open
-- Confidence threshold for flagging "unknown" in ML (Phase 3).
 - Which species to hold out for Condition B (Phase 4).
 
 ## Pipeline
@@ -89,6 +93,7 @@ barcodeid/
 │   └── evaluate.py
 ├── notebooks/
 ├── results/
+│   ├── models/                # saved ML models (git-ignored, re-created by ml_classifiers.py)
 │   ├── figures/
 │   └── tables/
 └── report/
@@ -99,7 +104,7 @@ barcodeid/
 - [x] Phase 0: repo and environment set up
 - [x] Phase 1: data acquisition and cleaning
 - [x] Phase 2: phylogenetic baseline
-- [ ] Phase 3: ML classifiers
+- [x] Phase 3: ML classifiers
 - [ ] Phase 4: Condition A and B experiment
 - [ ] Phase 5: evaluation and plots
 - [ ] Phase 6: report and presentation

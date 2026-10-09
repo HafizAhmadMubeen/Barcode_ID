@@ -30,6 +30,8 @@ python src/data_cleaning.py    # -> data/processed/clean.fasta, metadata.csv, re
 python src/alignment.py        # -> data/processed/aligned.fasta (MAFFT, cached)
 python src/splits.py           # -> data/processed/split_A.csv (made once, never regenerated)
 python src/phylo_baseline.py   # -> results/nj_tree.nwk, results/tables/nj_predictions_A.csv (~4 min first run)
+python src/features.py         # -> data/processed/kmer_k4.npy, kmer_k6.npy
+python src/ml_classifiers.py   # -> results/models/, results/tables/ml_predictions_A.csv, ml_thresholds.csv
 ```
 
 ## Layout

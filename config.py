@@ -55,6 +55,9 @@ DISTANCE_MODEL = "K2P"    # Kimura 2-parameter distance for the NJ tree
 
 # --- ML settings (Phase 3) ---
 KMER_SIZES = (4, 6)
+# "Unknown" thresholds accept this share of known-species queries,
+# calibrated by cross-validation on training data only (decided in Phase 3).
+UNKNOWN_ACCEPT_RATE = 0.95
 
 # Still open, decided in later phases (see CLAUDE.md "Still open"):
 # UNKNOWN_THRESHOLD  -> Phase 3

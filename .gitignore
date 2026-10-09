@@ -18,3 +18,9 @@ tools/
 # Raw BOLD downloads contain collector names and emails: keep them out of git.
 # Re-create with: python src/download_bold.py
 data/raw/*.tsv
+
+# Saved models are large and re-created by src/ml_classifiers.py
+results/models/
+
+# k-mer feature matrices: rebuilt identically by src/features.py in ~5 s
+data/processed/*.npy
