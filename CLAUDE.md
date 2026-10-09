@@ -19,10 +19,11 @@ Accuracy on known species is not the point. The contribution is the comparison u
 - **Marker:** COI barcode, about 650 bp.
 - **Source:** BOLD Systems public data (https://www.boldsystems.org), FASTA plus taxonomy metadata.
 - **Reason for taxon:** a 2021 study covered 103 of 145 European Odonata species from 697 COI specimens, and over 88% of species were identifiable from the barcode alone (https://peerj.com/articles/11192/). These are published-study numbers, so the live BOLD count may differ.
-- **Target size:** about 30–80 species, 500–2000 sequences. If the full Odonata set is much larger, narrow to one family (e.g. Libellulidae, Coenagrionidae) or one region, and record the choice and the real BOLD count here.
+- **Target size:** about 30–80 species, 500–2000 sequences.
+- **Final scope (decided 2026-10-09, Phase 1):** families **Libellulidae + Coenagrionidae**, specimens from **Europe** (the 30 European countries with Odonata records on BOLD, listed in `config.py` as `EUROPE_COUNTRIES`; Russia and Turkey excluded). Reason: full Odonata is far too large, and two families with many multi-species genera (Sympetrum, Ischnura, Coenagrion) give Condition B real close relatives.
+- **Real BOLD counts (v5 portal summary API, 2026-10-09, before cleaning):** all Odonata 2,434 species / 25,245 COI-5P records; European Odonata 120 species (105 with ≥3 records, 3,273 records); European Libellulidae 30 species (26 with ≥3, 810 records); European Coenagrionidae 25 species (24 with ≥3, 1,043 records). Chosen scope: about 55 species, 50 with ≥3 records, about 1,850 records.
 
 ## Still open
-- Final scope after checking real BOLD counts (Phase 1).
 - Exact rule that turns a tree position into a species prediction (Phase 2).
 - Confidence threshold for flagging "unknown" in ML (Phase 3).
 - Which species to hold out for Condition B (Phase 4).
@@ -86,7 +87,7 @@ barcodeid/
 
 ## Status
 - [x] Phase 0: taxon chosen (Odonata)
-- [ ] Phase 0: repo and environment set up
+- [x] Phase 0: repo and environment set up
 - [ ] Phase 1: data acquisition and cleaning
 - [ ] Phase 2: phylogenetic baseline
 - [ ] Phase 3: ML classifiers

@@ -27,6 +27,18 @@ REPORT_DIR = ROOT / "report"
 _LOCAL_MAFFT = ROOT / "tools" / "mafft-7.526-win64-signed" / "mafft-win" / "mafft.bat"
 MAFFT_CMD = str(_LOCAL_MAFFT) if _LOCAL_MAFFT.exists() else "mafft"
 
+# --- Dataset scope (decided in Phase 1, see CLAUDE.md) ---
+TARGET_FAMILIES = ("Libellulidae", "Coenagrionidae")
+MARKER = "COI-5P"
+# European countries that have Odonata records on BOLD (as of 2026-10-09).
+EUROPE_COUNTRIES = (
+    "Austria", "Germany", "Italy", "Montenegro", "Poland", "Netherlands", "Norway",
+    "Finland", "France", "United Kingdom", "Spain", "Greece", "Portugal", "Sweden",
+    "Croatia", "Belgium", "Switzerland", "Denmark", "Czechia", "Slovakia", "Hungary",
+    "Bosnia and Herzegovina", "Albania", "Bulgaria", "Romania", "Serbia", "Ukraine",
+    "Belarus", "Lithuania", "North Macedonia",
+)
+
 # --- Cleaning thresholds (Phase 1) ---
 MAX_N_FRACTION = 0.05     # drop sequences with more than 5% ambiguous bases
 MIN_SEQS_PER_SPECIES = 3  # drop species with fewer than 3 sequences

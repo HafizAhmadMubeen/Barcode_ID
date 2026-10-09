@@ -141,7 +141,7 @@ The project split into phases. Every phase ends with **files you can open** and 
 
 | Phase | Output you can open | Status |
 |---|---|---|
-| 0 Setup | repo + requirements | ☐ |
+| 0 Setup | repo + requirements | ☑ |
 | 1 Data | clean.fasta + cleaning_log.csv | ☐ |
 | 2 Phylogenetics | nj_tree.nwk + nj_predictions_A.csv | ☐ |
 | 3 ML | ml_predictions_A.csv + models | ☐ |
