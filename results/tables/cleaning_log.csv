@@ -1,0 +1,11 @@
+step,description,n_sequences,n_species,removed
+0_raw,"all downloaded rows (all markers, all families)",4477,120,0
+1_marker,marker_code == COI-5P,3365,118,1112
+2_family,"family in Libellulidae, Coenagrionidae",1933,55,1432
+3_species_named,identified to species,1782,55,151
+4_cross_genus_misid,BIN majority species is in a different genus,1780,55,2
+5_trim_long,449 sequences > 700 bp trimmed to the barcode,1780,55,0
+6_ambiguous_bases,<= 5% non-ACGT bases,1776,55,4
+7_length,600-700 bp,1592,54,184
+8_dedup,one copy of each identical sequence per species,798,54,794
+9_min_seqs,>= 3 sequences per species,784,45,14

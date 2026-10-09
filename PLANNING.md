@@ -53,6 +53,7 @@ Record final answers here once decided — don't leave open items unresolved pas
 - Trim to a consistent barcode region/length window.
 - Deduplicate identical sequences.
 - Log sequence/species counts before and after each cleaning step (for traceability and for the report's data section).
+- **As implemented (Phase 1):** `src/download_bold.py` fetches all European Odonata per country; `src/data_cleaning.py` keeps COI-5P from the two target families, drops unnamed records and cross-genus BIN misIDs, trims sequences over 700 bp to the barcode region, drops >5% non-ACGT, keeps 600–700 bp, dedups within species, and drops species with <3 sequences. Result: 784 sequences, 45 species.
 
 ### 5.2 Phylogenetic baseline
 - Multiple sequence alignment via MAFFT.

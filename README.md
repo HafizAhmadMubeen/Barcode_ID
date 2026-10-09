@@ -21,6 +21,14 @@ mafft --version
 - **macOS:** `brew install mafft`
 - **Linux (Debian/Ubuntu):** `sudo apt install mafft`
 
+## Running the pipeline
+Run each step from the repo root, in order:
+
+```bash
+python src/download_bold.py    # raw BOLD data -> data/raw/ (skips files already downloaded)
+python src/data_cleaning.py    # -> data/processed/clean.fasta, metadata.csv, results/tables/cleaning_log.csv
+```
+
 ## Layout
 - `config.py`: seed (`SEED = 42`), paths, thresholds
 - `data/raw/`: untouched BOLD downloads

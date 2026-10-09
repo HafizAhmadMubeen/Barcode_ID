@@ -22,6 +22,8 @@ Accuracy on known species is not the point. The contribution is the comparison u
 - **Target size:** about 30–80 species, 500–2000 sequences.
 - **Final scope (decided 2026-10-09, Phase 1):** families **Libellulidae + Coenagrionidae**, specimens from **Europe** (the 30 European countries with Odonata records on BOLD, listed in `config.py` as `EUROPE_COUNTRIES`; Russia and Turkey excluded). Reason: full Odonata is far too large, and two families with many multi-species genera (Sympetrum, Ischnura, Coenagrion) give Condition B real close relatives.
 - **Real BOLD counts (v5 portal summary API, 2026-10-09, before cleaning):** all Odonata 2,434 species / 25,245 COI-5P records; European Odonata 120 species (105 with ≥3 records, 3,273 records); European Libellulidae 30 species (26 with ≥3, 810 records); European Coenagrionidae 25 species (24 with ≥3, 1,043 records). Chosen scope: about 55 species, 50 with ≥3 records, about 1,850 records.
+- **Cleaning rules (decided 2026-10-09, Phase 1):** sequences over 700 bp are trimmed to the barcode region (local alignment to each family's most common 658 bp sequence), then lengths 600–700 bp are kept. A record is dropped as a misID only if its BIN's majority species is in a different genus (2 records); barcode sharing within a genus (Coenagrion puella/pulchellum/ornatum, Ischnura elegans group) is kept as real biology. Ambiguity filter counts every non-ACGT base. Dedup is within species.
+- **Final dataset (Phase 1):** 784 sequences, 45 species (22 Coenagrionidae, 23 Libellulidae), 14 genera; 3–60 sequences per species (median 10); 166 sequences were trimmed. 6 identical sequences carry two different species labels (within-genus barcode sharing), so some Condition A errors are unavoidable for both methods. Full counts per step: `results/tables/cleaning_log.csv`.
 
 ## Still open
 - Exact rule that turns a tree position into a species prediction (Phase 2).
@@ -89,7 +91,7 @@ barcodeid/
 ## Status
 - [x] Phase 0: taxon chosen (Odonata)
 - [x] Phase 0: repo and environment set up
-- [ ] Phase 1: data acquisition and cleaning
+- [x] Phase 1: data acquisition and cleaning
 - [ ] Phase 2: phylogenetic baseline
 - [ ] Phase 3: ML classifiers
 - [ ] Phase 4: Condition A and B experiment

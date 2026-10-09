@@ -40,8 +40,9 @@ EUROPE_COUNTRIES = (
 )
 
 # --- Cleaning thresholds (Phase 1) ---
-MAX_N_FRACTION = 0.05     # drop sequences with more than 5% ambiguous bases
-MIN_SEQS_PER_SPECIES = 3  # drop species with fewer than 3 sequences
+MAX_N_FRACTION = 0.05     # drop sequences with more than 5% ambiguous bases (anything not A/C/G/T)
+MIN_LEN, MAX_LEN = 600, 700  # keep full-length barcodes only (decided in Phase 1)
+MIN_SEQS_PER_SPECIES = 3  # drop species with fewer than 3 sequences (after dedup)
 
 # --- ML settings (Phase 3) ---
 KMER_SIZES = (4, 6)
