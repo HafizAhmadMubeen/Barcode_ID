@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Editors / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local tool installs (MAFFT for Windows); each teammate installs their own
+tools/
