@@ -77,29 +77,36 @@ def calibrate_threshold(name, X, y):
     return float(np.percentile(scores, 100 * (1 - UNKNOWN_ACCEPT_RATE)))
 
 
-def main():
+def run_ml(train_ids, y_train, query_ids, models_dir):
+    """Calibrate, train and apply all four model variants (k-NN/RF x k=4/k=6).
+
+    Returns (predictions, thresholds, timing): predictions has one row per
+    (model, k, query) with the raw prediction, its confidence and the unknown flag.
+    """
     ids = (PROCESSED_DIR / "kmer_ids.txt").read_text(encoding="utf-8").split()
-    split = pd.read_csv(PROCESSED_DIR / "split_A.csv").set_index("seq_id").loc[ids]
-    is_train = (split.set == "train").to_numpy()
-    y_train = split.species.to_numpy()[is_train]
-    test_ids = np.array(ids)[~is_train]
-    y_test = split.species.to_numpy()[~is_train]
-    assert not set(test_ids) & set(np.array(ids)[is_train]), "test sequence in training"
+    row = {seq_id: i for i, seq_id in enumerate(ids)}
+    # Always use the feature-file order: CV folds and k-NN tie-breaks depend on
+    # row order, so this keeps results independent of how the caller sorted its input.
+    label = dict(zip(train_ids, y_train))
+    train_ids = sorted(train_ids, key=row.get)
+    query_ids = sorted(query_ids, key=row.get)
+    train_rows = [row[i] for i in train_ids]
+    query_rows = [row[i] for i in query_ids]
+    y_train = np.array([label[i] for i in train_ids])
+    assert not set(train_ids) & set(query_ids), "query sequence in training"
 
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)
-    TABLES_DIR.mkdir(parents=True, exist_ok=True)
+    models_dir.mkdir(parents=True, exist_ok=True)
     predictions, thresholds, timing = [], [], []
-
     for k in KMER_SIZES:
         X = np.load(PROCESSED_DIR / f"kmer_k{k}.npy")
-        X_train, X_test = X[is_train], X[~is_train]
+        X_train, X_test = X[train_rows], X[query_rows]
         for name in ("knn", "rf"):
             threshold = calibrate_threshold(name, X_train, y_train)
 
             start = time.time()
             model = make_model(name).fit(X_train, y_train)
             fit_seconds = time.time() - start
-            joblib.dump(model, MODELS_DIR / f"{name}_k{k}.joblib")
+            joblib.dump(model, models_dir / f"{name}_k{k}.joblib")
 
             start = time.time()
             predicted = model.predict(X_test)
@@ -108,12 +115,11 @@ def main():
 
             flagged = conf < threshold
             predictions.append(pd.DataFrame({
-                "model": name, "k": k, "query_id": test_ids, "true_species": y_test,
+                "model": name, "k": k, "query_id": list(query_ids),
                 "predicted_species": predicted,                       # always a known species
                 "confidence": np.round(conf, 4),
                 "flagged_unknown": flagged,
                 "predicted_with_unknown": np.where(flagged, UNKNOWN, predicted),
-                "correct": predicted == y_test,
             }))
             # Shown as a positive distance for k-NN so it reads naturally.
             shown = -threshold if name == "knn" else threshold
@@ -122,9 +128,22 @@ def main():
                                "threshold": round(shown, 4), "accept_rate": UNKNOWN_ACCEPT_RATE})
             timing.append({"model": name, "k": k, "fit_seconds": round(fit_seconds, 2),
                            "predict_seconds_total": round(predict_seconds, 3),
-                           "predict_ms_per_query": round(1000 * predict_seconds / len(test_ids), 3)})
+                           "predict_ms_per_query": round(1000 * predict_seconds / len(query_ids), 3)})
+    return pd.concat(predictions, ignore_index=True), thresholds, timing
 
-    preds = pd.concat(predictions, ignore_index=True)
+
+def main():
+    split = pd.read_csv(PROCESSED_DIR / "split_A.csv")
+    train = split[split.set == "train"]
+    test = split[split.set == "test"]
+    preds, thresholds, timing = run_ml(list(train.seq_id), train.species, list(test.seq_id), MODELS_DIR)
+    true_of = dict(zip(test.seq_id, test.species))
+    preds.insert(3, "true_species", preds.query_id.map(true_of))
+    preds["correct"] = preds.predicted_species == preds.true_species
+    y_train = train.species.to_numpy()
+    test_ids = list(test.seq_id)
+    TABLES_DIR.mkdir(parents=True, exist_ok=True)
+
     preds.to_csv(TABLES_DIR / "ml_predictions_A.csv", index=False)
     pd.DataFrame(thresholds).to_csv(TABLES_DIR / "ml_thresholds.csv", index=False)
     pd.DataFrame(timing).to_csv(TABLES_DIR / "ml_timing_A.csv", index=False)

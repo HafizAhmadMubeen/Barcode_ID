@@ -32,6 +32,8 @@ python src/splits.py           # -> data/processed/split_A.csv (made once, never
 python src/phylo_baseline.py   # -> results/nj_tree.nwk, results/tables/nj_predictions_A.csv (~4 min first run)
 python src/features.py         # -> data/processed/kmer_k4.npy, kmer_k6.npy
 python src/ml_classifiers.py   # -> results/models/, results/tables/ml_predictions_A.csv, ml_thresholds.csv
+python src/experiment_full.py        # Condition A -> results/tables/condition_A.csv
+python src/experiment_incomplete.py  # Condition B -> results/tables/condition_B.csv (~4 min first run)
 ```
 
 ## Layout

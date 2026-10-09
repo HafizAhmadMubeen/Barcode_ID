@@ -35,8 +35,11 @@ Accuracy on known species is not the point. The contribution is the comparison u
 - **ML "unknown" rule (decided 2026-10-09, Phase 3):** thresholds accept 95% of known-species queries, calibrated by 2-fold cross-validation repeated 5 times on training data only. RF: unknown if top class probability is below the cut-off (0.466 for k=4, 0.500 for k=6). k-NN: unknown if the distance to the nearest training sequence is above the cut-off (0.0113 for k=4, 0.0124 for k=6). Values in `results/tables/ml_thresholds.csv`.
 - **Phase 3 result (Condition A, 236 queries):** k-NN 93.2% (k=4 and k=6), RF 91.5% (k=4) and 92.4% (k=6); 3.0–4.2% of known queries flagged unknown. Every error is within the barcode-sharing groups; no wrong genus. Identical results on re-run.
 
+- **Condition B design (decided 2026-10-09, Phase 4):** one species held out per multi-species genus (8 genera), drawn with SEED 42 and saved in `results/heldout_species.txt`: Coenagrion armatum, Erythromma viridulum, Ischnura pumilio, Leucorrhinia dubia, Libellula fulva, Orthetrum coerulescens, Pyrrhosoma elisabethae, Sympetrum sanguineum. Training = Condition A training minus these (447 sequences, 37 species); queries = 139 unknown (all held-out sequences) + 193 known (Condition A test of the remaining species); split in `data/processed/split_B.csv`. ML thresholds re-calibrated on B training with the same 95% rule; NJ keeps the Phase 2 rule (no extra unknown option), with its own tree `results/nj_tree_B.nwk`.
+- **Phase 4 result (Condition B, unknown queries):** NJ named a (wrong) species for 66.9% and abstained ("ambiguous") for 33.1%, but put 100% in the correct genus. ML without threshold always names a species (100%); k-NN's correct genus 100%, RF 69–78%. With thresholds: k-NN flagged 100% as unknown (thin margin: closest unknown 0.0124 vs cut-off 0.0111 for k=4); RF flagged 91.4% (k=4) and 88.5% (k=6). Known queries: NJ and k-NN 92.2%, RF 90.7%.
+
 ## Still open
-- Which species to hold out for Condition B (Phase 4).
+- Nothing for Phases 0–4. Phase 5 must show results at 3+ thresholds and re-run with 3 seeds.
 
 ## Pipeline
 1. **Data:** download, remove sequences with more than 5% N, trim to a consistent region, deduplicate, drop species with fewer than 3 sequences, split into train/test.
@@ -105,7 +108,7 @@ barcodeid/
 - [x] Phase 1: data acquisition and cleaning
 - [x] Phase 2: phylogenetic baseline
 - [x] Phase 3: ML classifiers
-- [ ] Phase 4: Condition A and B experiment
+- [x] Phase 4: Condition A and B experiment
 - [ ] Phase 5: evaluation and plots
 - [ ] Phase 6: report and presentation
 

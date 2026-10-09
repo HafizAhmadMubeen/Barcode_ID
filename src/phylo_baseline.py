@@ -72,46 +72,64 @@ def identify(tree, query_ids, train_species, genus_of):
     return results
 
 
-def main():
+def run_nj(train, queries, tree_path, cache_inputs):
+    """Build (or load) an NJ tree of train + query sequences and identify the queries.
+
+    train, queries: DataFrames with columns seq_id and species. Query species
+    are only used for the leakage check, never for the prediction.
+    tree_path: where the tree is cached; it is rebuilt if any file in
+    cache_inputs is newer. Returns (predictions, tree_seconds, rule_seconds).
+    """
     meta = pd.read_csv(PROCESSED_DIR / "metadata.csv")
-    split = pd.read_csv(SPLIT_A)
     genus_of = dict(zip(meta.species, meta.genus))
     aligned = {r.id: str(r.seq) for r in SeqIO.parse(ALIGNED, "fasta")}
 
-    train = split[split.set == "train"]
-    test = split[split.set == "test"]
     # Leakage guards: no sequence on both sides, and no identical sequence of the
     # same species on both sides (data_cleaning.py deduplicated within species).
-    assert not set(train.seq_id) & set(test.seq_id)
+    assert not set(train.seq_id) & set(queries.seq_id)
     train_pairs = {(sp, aligned[s]) for s, sp in zip(train.seq_id, train.species)}
-    assert not any((sp, aligned[s]) in train_pairs for s, sp in zip(test.seq_id, test.species))
+    assert not any((sp, aligned[s]) in train_pairs for s, sp in zip(queries.seq_id, queries.species))
 
     # --- Tree (cached) ---
-    ids = list(split.seq_id)
-    newest_input = max(ALIGNED.stat().st_mtime, SPLIT_A.stat().st_mtime)
-    if TREE_A.exists() and TREE_A.stat().st_mtime > newest_input:
-        print(f"Using cached tree {TREE_A}")
-        tree, tree_seconds = Phylo.read(TREE_A, "newick"), float("nan")
+    ids = list(train.seq_id) + list(queries.seq_id)
+    newest_input = max(Path(f).stat().st_mtime for f in [ALIGNED, *cache_inputs])
+    if tree_path.exists() and tree_path.stat().st_mtime > newest_input:
+        print(f"Using cached tree {tree_path}")
+        tree, tree_seconds = Phylo.read(tree_path, "newick"), float("nan")
     else:
         print(f"Building NJ tree for {len(ids)} sequences (takes a few minutes)...")
         start = time.time()
         tree = build_tree(ids, [aligned[i] for i in ids])
         tree_seconds = time.time() - start
-        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-        Phylo.write(tree, TREE_A, "newick")
-        print(f"Tree built in {tree_seconds:.0f}s -> {TREE_A}")
-    assert {t.name for t in tree.get_terminals()} == set(ids), "tree leaves != split"
+        tree_path.parent.mkdir(parents=True, exist_ok=True)
+        Phylo.write(tree, tree_path, "newick")
+        print(f"Tree built in {tree_seconds:.0f}s -> {tree_path}")
+    assert {t.name for t in tree.get_terminals()} == set(ids), "tree leaves != train + queries"
 
-    # --- Identify every test query ---
+    # --- Identify every query ---
     start = time.time()
     train_species = dict(zip(train.seq_id, train.species))
-    preds = pd.DataFrame(identify(tree, list(test.seq_id), train_species, genus_of))
-    rule_seconds = time.time() - start
+    preds = pd.DataFrame(identify(tree, list(queries.seq_id), train_species, genus_of))
+    return preds, tree_seconds, time.time() - start
+
+
+def main():
+    meta = pd.read_csv(PROCESSED_DIR / "metadata.csv")
+    split = pd.read_csv(SPLIT_A)
+    genus_of = dict(zip(meta.species, meta.genus))
+    train = split[split.set == "train"]
+    test = split[split.set == "test"]
+    ids = list(split.seq_id)
+    preds, tree_seconds, rule_seconds = run_nj(train, test, TREE_A, [SPLIT_A])
 
     preds.insert(1, "true_species", list(test.species))
     preds["correct"] = preds.predicted_species == preds.true_species
     TABLES_DIR.mkdir(parents=True, exist_ok=True)
     preds.to_csv(TABLES_DIR / "nj_predictions_A.csv", index=False)
+    # A cached tree has no build time: keep the one measured when it was built.
+    timing_file = TABLES_DIR / "nj_timing_A.csv"
+    if tree_seconds != tree_seconds and timing_file.exists():     # NaN check
+        tree_seconds = pd.read_csv(timing_file).tree_build_seconds.iloc[0]
     pd.DataFrame([{"n_sequences_in_tree": len(ids), "n_queries": len(preds),
                    "tree_build_seconds": round(tree_seconds, 1),
                    "rule_seconds_total": round(rule_seconds, 2)}]).to_csv(

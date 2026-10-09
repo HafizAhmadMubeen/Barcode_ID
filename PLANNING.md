@@ -73,6 +73,7 @@ Record final answers here once decided — don't leave open items unresolved pas
 - **Condition B (incomplete coverage):** entirely hold out some species from training.
   - NJ/ML trees: does the held-out query land near a taxonomically related species on the tree (a sensible "closest relative" answer), or does it get placed nonsensically?
   - ML classifiers: does the model confidently (and wrongly) assign a known species label, or — if using a confidence threshold — correctly flag "not in database"?
+- **As implemented (Phase 4):** `src/splits.py` holds out one random species per multi-species genus (8 species, `results/heldout_species.txt`) and writes `split_B.csv`; `src/experiment_full.py` and `src/experiment_incomplete.py` write `condition_A.csv` and `condition_B.csv` (one row per query, all methods side by side). First results on the 139 unknown queries: NJ named a wrong species 66.9% of the time but always within the correct genus; k-NN with threshold flagged 100% as unknown, RF 88.5–91.4%. Full numbers in CLAUDE.md.
 
 ### 5.5 Evaluation
 - Overall accuracy (ML vs. phylogenetic), Condition A.
