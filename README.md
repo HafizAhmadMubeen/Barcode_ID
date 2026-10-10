@@ -34,6 +34,9 @@ python src/features.py         # -> data/processed/kmer_k4.npy, kmer_k6.npy
 python src/ml_classifiers.py   # -> results/models/, results/tables/ml_predictions_A.csv, ml_thresholds.csv
 python src/experiment_full.py        # Condition A -> results/tables/condition_A.csv
 python src/experiment_incomplete.py  # Condition B -> results/tables/condition_B.csv (~4 min first run)
+python src/replicates.py       # robustness: seeds 1, 2, 3 -> results/replicates/ (~30 min)
+python src/runtime.py          # timing benchmark -> results/tables/runtime.csv (~15 min, idle machine)
+python src/evaluate.py         # summary tables -> results/tables/, figures -> results/figures/
 ```
 
 ## Layout

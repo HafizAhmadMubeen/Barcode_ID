@@ -1,5 +1,13 @@
 model,k,score,threshold,accept_rate
+knn,4,nearest_distance_max,0.0097,0.9
 knn,4,nearest_distance_max,0.0113,0.95
+knn,4,nearest_distance_max,0.0159,0.99
+rf,4,top_probability_min,0.5258,0.9
 rf,4,top_probability_min,0.466,0.95
+rf,4,top_probability_min,0.3188,0.99
+knn,6,nearest_distance_max,0.0108,0.9
 knn,6,nearest_distance_max,0.0124,0.95
+knn,6,nearest_distance_max,0.0176,0.99
+rf,6,top_probability_min,0.58,0.9
 rf,6,top_probability_min,0.5003,0.95
+rf,6,top_probability_min,0.3383,0.99

@@ -24,3 +24,6 @@ results/models/
 
 # k-mer feature matrices: rebuilt identically by src/features.py in ~5 s
 data/processed/*.npy
+
+# Replicate models (re-created by src/replicates.py)
+results/replicates/*/models/

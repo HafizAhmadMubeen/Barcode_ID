@@ -35,7 +35,8 @@ def to_wide(nj, ml, truth):
     for (model, k), g in ml.groupby(["model", "k"], sort=False):
         prefix = f"{model}_k{k}_"
         wide = wide.merge(
-            g[["query_id", "predicted_species", "confidence", "flagged_unknown"]]
+            g[["query_id", "predicted_species", "confidence", "flagged_unknown"]
+              + [c for c in g.columns if c.startswith("flagged_at_")]]
             .rename(columns=lambda c: c if c == "query_id" else prefix + c), on="query_id")
     return wide
 

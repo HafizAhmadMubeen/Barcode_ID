@@ -59,6 +59,6 @@ KMER_SIZES = (4, 6)
 # calibrated by cross-validation on training data only (decided in Phase 3).
 UNKNOWN_ACCEPT_RATE = 0.95
 
-# Still open, decided in later phases (see CLAUDE.md "Still open"):
-# UNKNOWN_THRESHOLD  -> Phase 3
-# HELDOUT_SPECIES_FILE -> Phase 4 (saved once, never regenerated)
+# --- Robustness checks (Phase 5) ---
+SENSITIVITY_ACCEPT_RATES = (0.90, 0.95, 0.99)  # threshold sensitivity; 0.95 is the main result
+REPLICATE_SEEDS = (1, 2, 3)  # extra runs with new splits and held-out species

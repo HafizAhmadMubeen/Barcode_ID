@@ -38,8 +38,11 @@ Accuracy on known species is not the point. The contribution is the comparison u
 - **Condition B design (decided 2026-10-09, Phase 4):** one species held out per multi-species genus (8 genera), drawn with SEED 42 and saved in `results/heldout_species.txt`: Coenagrion armatum, Erythromma viridulum, Ischnura pumilio, Leucorrhinia dubia, Libellula fulva, Orthetrum coerulescens, Pyrrhosoma elisabethae, Sympetrum sanguineum. Training = Condition A training minus these (447 sequences, 37 species); queries = 139 unknown (all held-out sequences) + 193 known (Condition A test of the remaining species); split in `data/processed/split_B.csv`. ML thresholds re-calibrated on B training with the same 95% rule; NJ keeps the Phase 2 rule (no extra unknown option), with its own tree `results/nj_tree_B.nwk`.
 - **Phase 4 result (Condition B, unknown queries):** NJ named a (wrong) species for 66.9% and abstained ("ambiguous") for 33.1%, but put 100% in the correct genus. ML without threshold always names a species (100%); k-NN's correct genus 100%, RF 69–78%. With thresholds: k-NN flagged 100% as unknown (thin margin: closest unknown 0.0124 vs cut-off 0.0111 for k=4); RF flagged 91.4% (k=4) and 88.5% (k=6). Known queries: NJ and k-NN 92.2%, RF 90.7%.
 
+- **Phase 5 design (decided 2026-10-09):** threshold sensitivity at accept rates 90/95/99% plus a full threshold curve; 3 replicate runs (seeds 1, 2, 3) each with a new Condition A split, new held-out species (same 1-per-genus rule) and retrained models, in `results/replicates/` (seed 42 stays the main result); runtime as batch timing of the full pipeline on the 236 Condition A queries, median of 3 runs (NJ: MAFFT + K2P + tree + rule; ML: k-mer features + prediction, training excluded).
+- **Phase 5 results:** runtime per query NJ 868 ms vs ML 3.1–4.0 ms (~260× faster). Condition A accuracy across 4 seeds: NJ 89.4–93.6%, k-NN 93.2–96.2%, RF 89.0–96.6%; k-NN best or tied-best in 3 of 4 seeds (RF k=4 in seed 3), NJ never best. Condition B false assignment (unknown queries named as a species, ML at 95% threshold): k-NN safest in all 4 seeds (k=6: 0%, 4.5%, 32.3%, 33.2%), RF k=6 11.5–41.8%, NJ 46.4–97.8%. All of k-NN's false assignments come from barcode-sharing species (Coenagrion pulchellum, Ischnura elegans, I. saharensis); excluding those, k-NN k=6 named 0% in every seed, RF 2.4–13.8%, NJ 34.3–100%. NJ never put an unknown in the wrong genus; RF without threshold did (22–31%, seed 42).
+
 ## Still open
-- Nothing for Phases 0–4. Phase 5 must show results at 3+ thresholds and re-run with 3 seeds.
+- Phase 6: report and slides.
 
 ## Pipeline
 1. **Data:** download, remove sequences with more than 5% N, trim to a consistent region, deduplicate, drop species with fewer than 3 sequences, split into train/test.
@@ -93,6 +96,8 @@ barcodeid/
 │   ├── ml_classifiers.py
 │   ├── experiment_full.py         # Condition A
 │   ├── experiment_incomplete.py   # Condition B
+│   ├── replicates.py          # robustness: re-run with seeds 1, 2, 3
+│   ├── runtime.py             # timing benchmark (NJ vs ML, same queries)
 │   └── evaluate.py
 ├── notebooks/
 ├── results/
@@ -109,7 +114,7 @@ barcodeid/
 - [x] Phase 2: phylogenetic baseline
 - [x] Phase 3: ML classifiers
 - [x] Phase 4: Condition A and B experiment
-- [ ] Phase 5: evaluation and plots
+- [x] Phase 5: evaluation and plots
 - [ ] Phase 6: report and presentation
 
 Update this list as phases pass their validation.

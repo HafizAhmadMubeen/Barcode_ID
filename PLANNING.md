@@ -117,6 +117,8 @@ barcodeid/
 │   ├── ml_classifiers.py
 │   ├── experiment_full.py
 │   ├── experiment_incomplete.py
+│   ├── replicates.py          # robustness: re-run with seeds 1, 2, 3
+│   ├── runtime.py             # timing benchmark (NJ vs ML, same queries)
 │   └── evaluate.py
 ├── notebooks/
 ├── results/
@@ -136,11 +138,11 @@ barcodeid/
 
 ## 9. Evaluation Metrics Checklist
 
-- [ ] Overall accuracy (ML vs. phylogenetic), full coverage
-- [ ] Per-species precision/recall
-- [ ] Runtime per query (both methods)
-- [ ] Incomplete coverage: false-positive species assignment rate
-- [ ] Incomplete coverage: correctly-flagged-unknown rate
+- [x] Overall accuracy (ML vs. phylogenetic), full coverage
+- [x] Per-species precision/recall
+- [x] Runtime per query (both methods)
+- [x] Incomplete coverage: false-positive species assignment rate
+- [x] Incomplete coverage: correctly-flagged-unknown rate
 
 ## 10. Risks / Things That Could Derail This
 

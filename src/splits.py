@@ -37,9 +37,9 @@ SPLIT_B = PROCESSED_DIR / "split_B.csv"
 HELDOUT = RESULTS_DIR / "heldout_species.txt"
 
 
-def make_split_A(meta):
+def make_split_A(meta, seed=SEED):
     """Stratified within-species split with a fixed seed."""
-    rng = np.random.default_rng(SEED)
+    rng = np.random.default_rng(seed)
     rows = []
     for species, group in meta.sort_values("seq_id").groupby("species"):
         ids = group.seq_id.to_numpy()
@@ -52,9 +52,9 @@ def make_split_A(meta):
     return pd.DataFrame(rows)
 
 
-def choose_heldout(meta):
+def choose_heldout(meta, seed=SEED):
     """One random species from each genus with at least two species."""
-    rng = np.random.default_rng(SEED)
+    rng = np.random.default_rng(seed)
     heldout = []
     for genus, group in meta.groupby("genus"):          # genera in alphabetical order
         species = sorted(group.species.unique())

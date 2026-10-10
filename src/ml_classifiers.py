@@ -37,19 +37,20 @@ from sklearn.neighbors import KNeighborsClassifier
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from config import (  # noqa: E402
-    KMER_SIZES, PROCESSED_DIR, RESULTS_DIR, SEED, TABLES_DIR, UNKNOWN_ACCEPT_RATE,
+    KMER_SIZES, PROCESSED_DIR, RESULTS_DIR, SEED, SENSITIVITY_ACCEPT_RATES, TABLES_DIR,
+    UNKNOWN_ACCEPT_RATE,
 )
 
 MODELS_DIR = RESULTS_DIR / "models"
 UNKNOWN = "unknown"
 
 
-def make_model(name):
+def make_model(name, seed=SEED):
     """A fresh, unfitted model with the settings chosen in Phase 3."""
     if name == "knn":
         return KNeighborsClassifier(n_neighbors=5, weights="distance")
     return RandomForestClassifier(n_estimators=500, class_weight="balanced",
-                                  random_state=SEED, n_jobs=-1)
+                                  random_state=seed, n_jobs=-1)
 
 
 def confidence(model, name, X):
@@ -63,21 +64,24 @@ def confidence(model, name, X):
     return model.predict_proba(X).max(axis=1)
 
 
-def calibrate_threshold(name, X, y):
-    """Confidence cut-off that accepts UNKNOWN_ACCEPT_RATE of known-species queries.
+def calibrate_thresholds(name, X, y, seed=SEED):
+    """Confidence cut-offs that accept a given share of known-species queries.
 
-    Uses only training data: 2-fold stratified CV (some species have just 2
-    training sequences), repeated 5 times, pooling the held-out scores.
+    Returns {accept_rate: cut-off} for every rate in SENSITIVITY_ACCEPT_RATES
+    (the main one is UNKNOWN_ACCEPT_RATE). Uses only training data: 2-fold
+    stratified CV (some species have just 2 training sequences), repeated
+    5 times, pooling the held-out scores.
     """
-    cv = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=SEED)
+    cv = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=seed)
     scores = []
     for fit_idx, score_idx in cv.split(X, y):
-        model = make_model(name).fit(X[fit_idx], y[fit_idx])
+        model = make_model(name, seed).fit(X[fit_idx], y[fit_idx])
         scores.extend(confidence(model, name, X[score_idx]))
-    return float(np.percentile(scores, 100 * (1 - UNKNOWN_ACCEPT_RATE)))
+    return {rate: float(np.percentile(scores, 100 * (1 - rate)))
+            for rate in SENSITIVITY_ACCEPT_RATES}
 
 
-def run_ml(train_ids, y_train, query_ids, models_dir):
+def run_ml(train_ids, y_train, query_ids, models_dir, seed=SEED):
     """Calibrate, train and apply all four model variants (k-NN/RF x k=4/k=6).
 
     Returns (predictions, thresholds, timing): predictions has one row per
@@ -101,10 +105,11 @@ def run_ml(train_ids, y_train, query_ids, models_dir):
         X = np.load(PROCESSED_DIR / f"kmer_k{k}.npy")
         X_train, X_test = X[train_rows], X[query_rows]
         for name in ("knn", "rf"):
-            threshold = calibrate_threshold(name, X_train, y_train)
+            cutoffs = calibrate_thresholds(name, X_train, y_train, seed)
+            threshold = cutoffs[UNKNOWN_ACCEPT_RATE]
 
             start = time.time()
-            model = make_model(name).fit(X_train, y_train)
+            model = make_model(name, seed).fit(X_train, y_train)
             fit_seconds = time.time() - start
             joblib.dump(model, models_dir / f"{name}_k{k}.joblib")
 
@@ -114,18 +119,23 @@ def run_ml(train_ids, y_train, query_ids, models_dir):
             predict_seconds = time.time() - start
 
             flagged = conf < threshold
-            predictions.append(pd.DataFrame({
+            table = pd.DataFrame({
                 "model": name, "k": k, "query_id": list(query_ids),
                 "predicted_species": predicted,                       # always a known species
                 "confidence": np.round(conf, 4),
                 "flagged_unknown": flagged,
                 "predicted_with_unknown": np.where(flagged, UNKNOWN, predicted),
-            }))
-            # Shown as a positive distance for k-NN so it reads naturally.
-            shown = -threshold if name == "knn" else threshold
-            thresholds.append({"model": name, "k": k,
-                               "score": "nearest_distance_max" if name == "knn" else "top_probability_min",
-                               "threshold": round(shown, 4), "accept_rate": UNKNOWN_ACCEPT_RATE})
+            })
+            # Unknown flags at the other acceptance rates (threshold sensitivity, Phase 5).
+            for rate, cutoff in cutoffs.items():
+                table[f"flagged_at_{round(rate * 100)}"] = conf < cutoff
+            predictions.append(table)
+            for rate, cutoff in cutoffs.items():
+                # Shown as a positive distance for k-NN so it reads naturally.
+                shown = -cutoff if name == "knn" else cutoff
+                thresholds.append({"model": name, "k": k,
+                                   "score": "nearest_distance_max" if name == "knn" else "top_probability_min",
+                                   "threshold": round(shown, 4), "accept_rate": rate})
             timing.append({"model": name, "k": k, "fit_seconds": round(fit_seconds, 2),
                            "predict_seconds_total": round(predict_seconds, 3),
                            "predict_ms_per_query": round(1000 * predict_seconds / len(query_ids), 3)})
@@ -154,7 +164,8 @@ def main():
     print(f"{'model':6s} {'k':>2s}  {'accuracy':>8s}  {'flagged unknown':>15s}  "
           f"{'threshold':>22s}  {'ms/query':>8s}")
     for (name, k), g in preds.groupby(["model", "k"], sort=False):
-        t = next(t for t in thresholds if t["model"] == name and t["k"] == k)
+        t = next(t for t in thresholds if t["model"] == name and t["k"] == k
+                 and t["accept_rate"] == UNKNOWN_ACCEPT_RATE)
         ms = next(t for t in timing if t["model"] == name and t["k"] == k)["predict_ms_per_query"]
         print(f"{name:6s} {k:2d}  {g.correct.mean():8.1%}  {g.flagged_unknown.mean():15.1%}  "
               f"{t['score'] + ' ' + str(t['threshold']):>22s}  {ms:8.3f}")
