@@ -39,6 +39,7 @@ python src/replicates.py       # robustness: seeds 1, 2, 3 -> results/replicates
 python src/runtime.py          # timing benchmark -> results/tables/runtime.csv (~15 min, idle machine)
 python src/evaluate.py         # summary tables -> results/tables/, figures -> results/figures/
 python src/significance.py     # confidence intervals + significance tests -> results/tables/
+python src/leave_one_species_out.py  # every species held out once -> results/tables/loso_*.csv (~40 min)
 ```
 
 ## Layout

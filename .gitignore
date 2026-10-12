@@ -30,3 +30,6 @@ results/replicates/*/models/
 
 # Personal progress notes (not shared)
 MY_PROGRESS_NOTES.md
+
+# Leave-one-species-out models (re-created by src/leave_one_species_out.py)
+results/loso/models/

@@ -121,6 +121,7 @@ barcodeid/
 │   ├── replicates.py          # robustness: re-run with seeds 1, 2, 3
 │   ├── runtime.py             # timing benchmark (NJ vs ML, same queries)
 │   ├── significance.py        # confidence intervals + McNemar tests
+│   ├── leave_one_species_out.py   # every species held out once (Condition B robustness)
 │   └── evaluate.py
 ├── notebooks/
 ├── results/

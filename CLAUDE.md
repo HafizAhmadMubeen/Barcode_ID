@@ -51,8 +51,11 @@ Accuracy on known species is not the point. The contribution is the comparison u
 - **Improvement 4 (decided 2026-10-12):** every method reports a genus alongside "unknown": k-NN and BCM = genus of the nearest training sequence(s) ("" if tied across genera); RF = genus of its top species (summing probabilities per genus was tried first but favoured species-rich genera: 32/32 Erythromma viridulum → Coenagrion); NJ = shared genus of the clade. New column `unknown_flagged_correct_genus_rate` ("safe and informative").
 - **Improvements 3+4 result (Condition B unknowns, main cut-offs, min–max over 4 seeds):** excluding barcode-sharing species, k-NN wrongly named **0% in every seed** and flagged them with the correct genus 90–100% (k=4) / 99–100% (k=6); RF 0–11.5% wrong, 54–97% safe + correct genus; BCM 0–16.8% wrong, 83–100%; NJ 13.5–100% wrong, 0–83%. Barcode-sharing species only: every method fails often (k-NN up to 72–74% wrong, NJ 61–100%). All species: k-NN 0–33% wrong with 66–100% safe + correct genus, so k-NN's "unknown" is about as informative as NJ's genus placement while far safer.
 
+- **Improvement 5 (decided 2026-10-12): leave-one-species-out (`src/leave_one_species_out.py`).** Each of the 39 species in multi-species genera held out alone: training = Condition A training minus that species, queries = all its sequences; own NJ tree, ML retrained and re-calibrated, BCM. Per-species results `results/tables/loso_per_species.csv`, overall `loso_overall.csv` (each species weighted equally). ~40 min total.
+- **Improvement 5 result (main cut-offs, mean over species):** all 39 species: NJ wrongly named 66.8% (mostly wrong for 67% of species), k-NN 14.4–14.5% (never wrong for 82% of species), RF 16.5–20.0%, BCM 19.0%. Excluding the 10 barcode-sharing species (29 species): **k-NN 0% wrong for every species** (k=4 and k=6) with correct genus 96% (k=4) / 99% (k=6); RF 0% (k=4) / 3.8% (k=6); BCM 4.2%; NJ 62.1%. Barcode-sharing only: all methods fail (k-NN 56%, RF 64–67%, BCM 62%, NJ 80%). New finding: NJ put 2 species in the **wrong genus** (Libellula quadrimaculata ↔ Leucorrhinia caudalis, 34 queries); no ML method or BCM ever named a wrong genus here. k-NN's only failure outside the barcode-sharing groups: 1 of 21 Sympetrum striolatum queries.
+
 ## Still open
-- Improvement 5, then Phase 6: report and slides.
+- Phase 6: report and slides.
 
 ## Pipeline
 1. **Data:** download, remove sequences with more than 5% N, trim to a consistent region, deduplicate, drop species with fewer than 3 sequences, split into train/test.
@@ -110,6 +113,7 @@ barcodeid/
 │   ├── replicates.py          # robustness: re-run with seeds 1, 2, 3
 │   ├── runtime.py             # timing benchmark (NJ vs ML, same queries)
 │   ├── significance.py        # confidence intervals + McNemar tests
+│   ├── leave_one_species_out.py   # every species held out once (Condition B robustness)
 │   └── evaluate.py
 ├── notebooks/
 ├── results/
