@@ -22,6 +22,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from config import PROCESSED_DIR, REPLICATE_SEEDS, RESULTS_DIR  # noqa: E402
+from bcm import run_bcm  # noqa: E402
 from experiment_full import to_wide  # noqa: E402
 from ml_classifiers import run_ml  # noqa: E402
 from phylo_baseline import run_nj  # noqa: E402
@@ -44,7 +45,8 @@ def run_condition(name, split, train_set, out_dir, genus_of, seed, cache_inputs)
     nj, _, _ = run_nj(train, queries, out_dir / f"nj_tree_{name}.nwk", cache_inputs)
     ml, _, _ = run_ml(list(train.seq_id), train.species, list(queries.seq_id),
                       out_dir / "models" / name, seed=seed)
-    wide = to_wide(nj, ml, truth_table(queries, genus_of, query_type))
+    bcm, _ = run_bcm(train, queries, seed=seed)
+    wide = to_wide(nj, ml, truth_table(queries, genus_of, query_type), bcm)
     wide.to_csv(out_dir / f"condition_{name}.csv", index=False)
     return wide
 

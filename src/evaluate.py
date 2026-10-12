@@ -40,14 +40,16 @@ from config import (  # noqa: E402
 )
 
 ML = ["knn_k4", "knn_k6", "rf_k4", "rf_k6"]
-METHODS = ["nj"] + ML
+METHODS = ["nj"] + ML + ["bcm"]
 LABEL = {"nj": "NJ tree", "knn_k4": "k-NN (k=4)", "knn_k6": "k-NN (k=6)",
-         "rf_k4": "RF (k=4)", "rf_k6": "RF (k=6)"}
+         "rf_k4": "RF (k=4)", "rf_k6": "RF (k=6)", "bcm": "Best close match"}
 MAIN_RATE = round(UNKNOWN_ACCEPT_RATE * 100)
 
-# Colours: one per method family (validated palette, slots 1-3), status colours
-# for outcomes (safe / close / dangerous, always with a text label).
-FAMILY_COLOR = {"nj": "#2a78d6", "knn": "#eb6834", "rf": "#1baf7a"}
+# Colours: one per method family (validated palette slots 1-3 + violet, checked
+# all-pairs with the dataviz validator), status colours for outcomes
+# (safe / close / dangerous, always with a text label).
+FAMILY_COLOR = {"nj": "#2a78d6", "knn": "#eb6834", "rf": "#1baf7a", "bcm": "#4a3aa7"}
+MAIN_SETTING = {"nj": "rule", "bcm": "Meier cut-off"}   # ML main setting: "accept 95%"
 OUTCOME_COLOR = {"abstained": "#0ca30c", "near_relative": "#fab219", "other_genus": "#d03b3b"}
 OUTCOME_LABEL = {"abstained": "Flagged unknown / abstained (safe)",
                  "near_relative": "Wrong species, correct genus",
@@ -59,17 +61,29 @@ def family(method):
     return method.split("_")[0]
 
 
-def answer(df, method, rate=None):
-    """Each query's answer: a species name, 'unknown' (ML flag) or 'ambiguous' (NJ).
+def main_setting(method):
+    return MAIN_SETTING.get(method, f"accept {MAIN_RATE}%")
 
-    rate=None: ML without any threshold. rate=90/95/99: ML with that threshold.
+
+def answer(df, method, setting=None):
+    """Each query's answer: a species name, 'unknown' (flagged) or 'ambiguous'.
+
+    setting=None: no cut-off. "main": the method's main cut-off (ML: accept 95%;
+    BCM: Meier's rule). 90/95/99: the calibrated cut-off accepting that share of
+    known queries. "fixed_2": BCM's fixed 2% cut-off. NJ ignores the setting.
     """
     if method == "nj":
         return df.nj_predicted_species
     predicted = df[f"{method}_predicted_species"]
-    if rate is None:
+    if setting is None:
         return predicted
-    return predicted.where(~df[f"{method}_flagged_at_{rate}"], "unknown")
+    if setting == "main":
+        column = "flagged_unknown"
+    elif isinstance(setting, int):
+        column = f"flagged_at_{setting}"
+    else:
+        column = f"flagged_{setting}"
+    return predicted.where(~df[f"{method}_{column}"], "unknown")
 
 
 def outcome_rates(df, ans):
@@ -85,8 +99,8 @@ def summarize_A(a, runtime):
     rows, per_species = [], []
     species = sorted(a.true_species.unique())
     for m in METHODS:
-        ans = answer(a, m, None if m == "nj" else MAIN_RATE)
-        raw = answer(a, m)                          # ML without threshold
+        ans = answer(a, m, "main")
+        raw = answer(a, m)                          # no cut-off
         p, r, _, support = precision_recall_fscore_support(
             a.true_species, raw, labels=species, zero_division=0)
         per_species += [{"method": m, "species": s, "precision": round(pi, 3),
@@ -105,9 +119,11 @@ def summarize_A(a, runtime):
 
 def summarize_B(b):
     unk, kno = b[b.query_type == "unknown"], b[b.query_type == "known"]
-    settings = [("nj", None, "rule")] + [(m, None, "no threshold") for m in ML] + \
-               [(m, rate, f"accept {rate}%") for m in ML
-                for rate in [round(x * 100) for x in SENSITIVITY_ACCEPT_RATES]]
+    rates = [round(x * 100) for x in SENSITIVITY_ACCEPT_RATES]
+    settings = ([("nj", None, "rule")]
+                + [(m, None, "no threshold") for m in ML + ["bcm"]]
+                + [(m, rate, f"accept {rate}%") for m in ML + ["bcm"] for rate in rates]
+                + [("bcm", "main", "Meier cut-off"), ("bcm", "fixed_2", "fixed 2%")])
     rows = []
     for m, rate, setting in settings:
         u_ans, k_ans = answer(unk, m, rate), answer(kno, m, rate)
@@ -131,8 +147,7 @@ def key_numbers(a, b, seed):
     row = {"seed": seed}
     for m in METHODS:
         row[f"A_acc_{m}"] = (answer(a, m) == a.true_species).mean()
-        rate = None if m == "nj" else MAIN_RATE
-        o = outcome_rates(unk, answer(unk, m, rate))
+        o = outcome_rates(unk, answer(unk, m, "main"))
         row[f"B_false_assign_{m}"] = o["near_relative"] + o["other_genus"]
     # Winners; ties are listed together ("knn_k4/knn_k6").
     best_a = max(row[f"A_acc_{m}"] for m in METHODS)
@@ -189,33 +204,37 @@ def fig_accuracy(summary_A, reps):
 
 def fig_runtime(summary_A):
     s = summary_A.set_index("method").runtime_ms_per_query
-    if s.isna().all():
+    methods = [m for m in METHODS if not np.isnan(s[m])]     # only methods that were timed
+    if not methods:
         return
-    fig, ax = plt.subplots(figsize=(7, 3.6))
+    fig, ax = plt.subplots(figsize=(7, 0.6 * len(methods) + 0.8))
     style(ax, "Runtime per query (Condition A, 236 queries, median of 3 runs)",
           xlabel="Milliseconds per query (log scale)")
-    y = np.arange(len(METHODS))[::-1]
-    ax.barh(y, [s[m] for m in METHODS], height=0.6, color=[FAMILY_COLOR[family(m)] for m in METHODS],
+    y = np.arange(len(methods))[::-1]
+    ax.barh(y, [s[m] for m in methods], height=0.6, color=[FAMILY_COLOR[family(m)] for m in methods],
             edgecolor=SURFACE, linewidth=2)
-    for yi, m in zip(y, METHODS):
+    for yi, m in zip(y, methods):
         ax.text(s[m] * 1.15, yi, f"{s[m]:,.0f} ms" if s[m] >= 100 else f"{s[m]:.1f} ms",
                 va="center", color=INK, fontsize=9)
-    ax.set_yticks(y, [LABEL[m] for m in METHODS])
+    ax.set_yticks(y, [LABEL[m] for m in methods])
     ax.set_xscale("log")
     ax.set_xlim(right=s.max() * 8)
     ax.xaxis.grid(True, color=GRID, linewidth=0.8)
-    fig.text(0.01, 0.01, "NJ: MAFFT alignment + distances + tree + rule. ML: k-mer features + "
-             "prediction (training excluded, a one-off cost).", fontsize=8, color=INK_2)
+    fig.text(0.01, 0.01, "NJ: alignment + distances + tree + rule. Best close match: alignment + "
+             "distances + nearest match. ML: k-mer features + prediction (training excluded).",
+             fontsize=7.5, color=INK_2)
     save(fig, "runtime.png")
 
 
 def fig_outcomes(summary_B):
-    rows = [("nj", "rule", "NJ tree")] + \
-           [(m, "no threshold", f"{LABEL[m]}, no threshold") for m in ML] + \
-           [(m, f"accept {MAIN_RATE}%", f"{LABEL[m]}, threshold") for m in ML]
+    rows = ([("nj", "rule", "NJ tree")]
+            + [(m, "no threshold", f"{LABEL[m]}, no threshold") for m in ML]
+            + [("bcm", "no threshold", "Best close match, no cut-off")]
+            + [(m, f"accept {MAIN_RATE}%", f"{LABEL[m]}, threshold") for m in ML]
+            + [("bcm", "Meier cut-off", "Best close match, Meier cut-off")])
     s = summary_B.set_index(["method", "setting"])
-    fig, ax = plt.subplots(figsize=(8, 4.8))
-    style(ax, "Condition B: what each method answers for species NOT in the database",
+    fig, ax = plt.subplots(figsize=(8, 5.6))
+    style(ax, "Condition B: answers for species NOT in the database",
           xlabel="Share of unknown queries (%)")
     y = np.arange(len(rows))[::-1]
     for yi, (m, setting, _) in zip(y, rows):
@@ -243,7 +262,7 @@ def fig_A_vs_B(summary_A, summary_B):
     style(ax, "From full to incomplete coverage", ylabel="Share of queries (%)")
     ends = {}
     for m in METHODS:
-        setting = "rule" if m == "nj" else f"accept {MAIN_RATE}%"
+        setting = main_setting(m)
         a = 100 * sa.accuracy_with_unknown_flag[m]
         b = 100 * sb.loc[(m, setting)].unknown_flagged_rate
         color = FAMILY_COLOR[family(m)]
@@ -263,8 +282,8 @@ def fig_A_vs_B(summary_A, summary_B):
     ax.set_xlim(-0.15, 1.9)
     ax.set_ylim(0, 105)
     ax.yaxis.grid(True, color=GRID, linewidth=0.8)
-    fig.text(0.01, 0.01, "ML with its calibrated threshold (accept 95% of knowns); NJ with its rule.",
-             fontsize=8, color=INK_2)
+    fig.text(0.01, 0.01, "ML with its calibrated threshold (accept 95% of knowns); NJ with its rule; "
+             "best close match with Meier's cut-off.", fontsize=8, color=INK_2)
     save(fig, "A_vs_B.png")
 
 
@@ -274,18 +293,22 @@ def fig_threshold_curve(b, summary_B):
     style(ax, "Threshold sensitivity (Condition B)",
           xlabel="Known queries wrongly flagged unknown (%)",
           ylabel="Unknown queries caught (%)")
-    for m in ML:
-        cu, ck = unk[f"{m}_confidence"].to_numpy(), kno[f"{m}_confidence"].to_numpy()
+    for m in ML + ["bcm"]:
+        # Confidence: higher = more sure. For BCM it is minus the nearest distance.
+        conf = (lambda d: -d["bcm_nearest_distance"]) if m == "bcm" else (lambda d: d[f"{m}_confidence"])
+        cu, ck = conf(unk).to_numpy(), conf(kno).to_numpy()
         cuts = np.unique(np.concatenate([cu, ck, [np.inf]]))
         xs = [100 * (ck < c).mean() for c in cuts]
         ys = [100 * (cu < c).mean() for c in cuts]
-        marker = "o" if m.endswith("k4") else "s"
+        marker = {"bcm": "^"}.get(m, "o" if m.endswith("k4") else "s")
         ax.plot(xs, ys, color=FAMILY_COLOR[family(m)], linewidth=2, label=LABEL[m],
-                linestyle="-" if m.endswith("k6") else (0, (4, 2)))
-        s = summary_B.set_index(["method", "setting"])
-        for rate in [round(x * 100) for x in SENSITIVITY_ACCEPT_RATES]:
-            r = s.loc[(m, f"accept {rate}%")]
-            ax.scatter(100 * r.known_flagged_rate, 100 * r.unknown_flagged_rate, s=40, marker=marker,
+                linestyle=(0, (4, 2)) if m.endswith("k4") else "-")
+        # Markers: the calibrated cut-offs (90/95/99%), read from the flag columns.
+        flags = [f"{m}_flagged_at_{round(x * 100)}" for x in SENSITIVITY_ACCEPT_RATES]
+        if m == "bcm":
+            flags.append("bcm_flagged_unknown")            # Meier's cut-off
+        for col in flags:
+            ax.scatter(100 * kno[col].mean(), 100 * unk[col].mean(), s=40, marker=marker,
                        color=FAMILY_COLOR[family(m)], edgecolor=SURFACE, linewidth=2, zorder=3)
     nj = summary_B.set_index("method").loc["nj"]
     ax.scatter(100 * nj.known_flagged_rate, 100 * nj.unknown_flagged_rate, s=70, marker="D",
@@ -294,8 +317,8 @@ def fig_threshold_curve(b, summary_B):
     ax.set_ylim(0, 102)
     ax.grid(True, color=GRID, linewidth=0.8)
     ax.legend(frameon=False, loc="lower right", fontsize=9)
-    ax.text(0.5, 3, "Lines: every possible threshold. Markers: calibrated 90%, 95%, 99%.",
-            fontsize=8, color=INK_2)
+    fig.text(0.01, 0.01, "Lines: every possible cut-off. Markers: calibrated 90%, 95%, 99% "
+             "(best close match also: Meier's cut-off).", fontsize=8, color=INK_2)
     save(fig, "threshold_curve.png")
 
 

@@ -24,6 +24,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from config import PROCESSED_DIR, RESULTS_DIR, TABLES_DIR  # noqa: E402
+from bcm import run_bcm  # noqa: E402
 from experiment_full import to_wide  # noqa: E402
 from ml_classifiers import MODELS_DIR, run_ml  # noqa: E402
 from phylo_baseline import AMBIGUOUS, run_nj  # noqa: E402
@@ -60,7 +61,10 @@ def main():
         "query_id": queries.seq_id, "true_species": queries.species,
         "true_genus": queries.species.map(genus_of),
         "query_type": queries.set.str.replace("test_", "", regex=False)})
-    wide = to_wide(nj, ml, truth)
+    bcm, bcm_cutoffs = run_bcm(train, queries)
+    pd.DataFrame([{"rule": k, "cutoff_k2p": round(v, 5)} for k, v in bcm_cutoffs.items()]).to_csv(
+        TABLES_DIR / "bcm_thresholds_B.csv", index=False)
+    wide = to_wide(nj, ml, truth, bcm)
     wide.to_csv(TABLES_DIR / "condition_B.csv", index=False)
 
     # --- Summary: unknown queries (held-out species) ---
@@ -79,6 +83,11 @@ def main():
 
     # --- Summary: known queries ---
     kno = wide[wide.query_type == "known"]
+    bcm_named = ~unk.bcm_flagged_unknown & (unk.bcm_predicted_species != "ambiguous")
+    bcm_genus = unk.bcm_predicted_species.str.split().str[0] == unk.true_genus
+    print(f"  {'bcm (Meier cut)':16s} {bcm_named.mean():15.1%} {(~bcm_named).mean():9.1%} "
+          f"{(bcm_named & bcm_genus).mean():13.1%}")
+
     print(f"\nKNOWN queries ({len(kno)})")
     print(f"  {'method':8s} {'correct species':>15s} {'abstains':>9s}")
     print(f"  {'nj':8s} {(kno.nj_predicted_species == kno.true_species).mean():15.1%} "

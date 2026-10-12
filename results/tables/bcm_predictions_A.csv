@@ -1,0 +1,237 @@
+query_id,true_species,predicted_species,nearest_distance,flagged_unknown,flagged_fixed_2,flagged_at_90,flagged_at_95,flagged_at_99,correct
+UMAAO073-24,Ceriagrion tenellum,Ceriagrion tenellum,0.00612,False,False,True,True,False,True
+ODOBP2894-16,Ceriagrion tenellum,Ceriagrion tenellum,0.00152,False,False,False,False,False,True
+TRDOD016-14,Coenagrion armatum,Coenagrion armatum,-0.0,False,False,False,False,False,True
+ZPLOD189-20,Coenagrion caerulescens,Coenagrion caerulescens,0.0201,False,True,True,True,True,True
+ZPLOD192-20,Coenagrion caerulescens,Coenagrion caerulescens,0.01853,False,False,True,True,True,True
+ODTRI004-14,Coenagrion hastulatum,Coenagrion hastulatum,-0.0,False,False,False,False,False,True
+ODTRI006-14,Coenagrion hastulatum,Coenagrion hastulatum,-0.0,False,False,False,False,False,True
+LEFIJ15493-21,Coenagrion hastulatum,Coenagrion hastulatum,-0.0,False,False,False,False,False,True
+AODON676-20,Coenagrion hastulatum,Coenagrion hastulatum,0.00161,False,False,False,False,False,True
+AODON485-20,Coenagrion hastulatum,Coenagrion hastulatum,0.00153,False,False,False,False,False,True
+ZPLOD202-20,Coenagrion hastulatum,Coenagrion hastulatum,-0.0,False,False,False,False,False,True
+AODON912-22,Coenagrion hastulatum,Coenagrion hastulatum,-0.0,False,False,False,False,False,True
+LEFIJ29508-22,Coenagrion johanssoni,Coenagrion johanssoni,0.04472,True,True,True,True,True,True
+ODOBP5327-16,Coenagrion lunulatum,Coenagrion lunulatum,-0.0,False,False,False,False,False,True
+GBMIN88583-17,Coenagrion mercuriale,Coenagrion mercuriale,-0.0,False,False,False,False,False,True
+FBAQU1429-13,Coenagrion mercuriale,Coenagrion mercuriale,-0.0,False,False,False,False,False,True
+AODON667-20,Coenagrion ornatum,ambiguous,-0.0,False,False,False,False,False,False
+AODON944-22,Coenagrion ornatum,ambiguous,-0.0,False,False,False,False,False,False
+LEFIJ15497-21,Coenagrion puella,ambiguous,-0.0,False,False,False,False,False,False
+GBMIN88590-17,Coenagrion puella,ambiguous,-0.0,False,False,False,False,False,False
+GBODO186-18,Coenagrion puella,ambiguous,0.00152,False,False,False,False,False,False
+AODON902-22,Coenagrion puella,ambiguous,-0.0,False,False,False,False,False,False
+GODO029-18,Coenagrion puella,ambiguous,0.00152,False,False,False,False,False,False
+ODOPL070-19,Coenagrion puella,ambiguous,-0.0,False,False,False,False,False,False
+ZPLOD234-20,Coenagrion puella,Coenagrion puella,0.00152,False,False,False,False,False,True
+GBODO069-18,Coenagrion puella,ambiguous,-0.0,False,False,False,False,False,False
+DTNHM13000-24,Coenagrion puella,ambiguous,0.00152,False,False,False,False,False,False
+ODOPL069-19,Coenagrion puella,ambiguous,-0.0,False,False,False,False,False,False
+AODON020-20,Coenagrion puella,ambiguous,-0.0,False,False,False,False,False,False
+GBODO037-18,Coenagrion puella,ambiguous,-0.0,False,False,False,False,False,False
+GBMNA38105-19,Coenagrion puella,Coenagrion puella,-0.0,False,False,False,False,False,True
+FBAQU528-10,Coenagrion puella,ambiguous,-0.0,False,False,False,False,False,False
+AODON179-20,Coenagrion puella,ambiguous,-0.0,False,False,False,False,False,False
+AODON499-20,Coenagrion pulchellum,ambiguous,-0.0,False,False,False,False,False,False
+ZPLOD262-20,Coenagrion pulchellum,Coenagrion puella,0.00305,False,False,False,False,False,False
+ZPLOD256-20,Coenagrion pulchellum,Coenagrion puella,0.00152,False,False,False,False,False,False
+KURS023-21,Coenagrion pulchellum,Coenagrion pulchellum,-0.0,False,False,False,False,False,True
+AODON924-22,Coenagrion pulchellum,ambiguous,-0.0,False,False,False,False,False,False
+ODTRI009-14,Coenagrion pulchellum,Coenagrion pulchellum,-0.0,False,False,False,False,False,True
+AODON186-20,Coenagrion pulchellum,Coenagrion pulchellum,-0.0,False,False,False,False,False,True
+AODON009-20,Coenagrion pulchellum,ambiguous,-0.0,False,False,False,False,False,False
+AODON365-20,Coenagrion pulchellum,Coenagrion pulchellum,0.00151,False,False,False,False,False,True
+GBEPT903-14,Coenagrion pulchellum,Coenagrion pulchellum,0.00305,False,False,False,False,False,True
+TRSKA2839-20,Coenagrion scitulum,Coenagrion scitulum,0.00154,False,False,False,False,False,True
+TRSKA2848-20,Coenagrion scitulum,Coenagrion scitulum,0.00153,False,False,False,False,False,True
+GBEPT907-14,Coenagrion scitulum,Coenagrion scitulum,0.00152,False,False,False,False,False,True
+TRSKA2100-20,Crocothemis erythraea,Crocothemis erythraea,-0.0,False,False,False,False,False,True
+GBAAW80744-24,Crocothemis erythraea,Crocothemis erythraea,0.00322,False,False,False,False,False,True
+FBAQU312-09,Crocothemis erythraea,Crocothemis erythraea,0.00152,False,False,False,False,False,True
+AODON275-20,Crocothemis erythraea,Crocothemis erythraea,0.00458,False,False,True,False,False,True
+ZPLOD328-20,Crocothemis erythraea,Crocothemis erythraea,-0.0,False,False,False,False,False,True
+ZPLOD331-20,Crocothemis erythraea,Crocothemis erythraea,-0.0,False,False,False,False,False,True
+AODON371-20,Crocothemis erythraea,Crocothemis erythraea,0.00305,False,False,False,False,False,True
+PLSW071-20,Crocothemis erythraea,Crocothemis erythraea,-0.0,False,False,False,False,False,True
+AODON283-20,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+GBODO096-18,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+AODON360-20,Enallagma cyathigerum,Enallagma cyathigerum,0.0061,False,False,True,False,False,True
+AODON438-20,Enallagma cyathigerum,Enallagma cyathigerum,0.00153,False,False,False,False,False,True
+AODON254-20,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+HETFI049-11,Enallagma cyathigerum,Enallagma cyathigerum,0.00152,False,False,False,False,False,True
+ODTRI012-14,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+AODON288-20,Enallagma cyathigerum,Enallagma cyathigerum,0.00153,False,False,False,False,False,True
+BGEPL3214-25,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+AODON149-20,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+LEFIJ5909-17,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+ODOPL100-19,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+LEFIJ7803-18,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+LEFIJ15502-21,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+GBODO172-18,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+FBAQU490-10,Enallagma cyathigerum,Enallagma cyathigerum,-0.0,False,False,False,False,False,True
+TRSKA2661-20,Erythromma lindenii,Erythromma lindenii,-0.0,False,False,False,False,False,True
+ZPLOD392-20,Erythromma lindenii,Erythromma lindenii,0.00152,False,False,False,False,False,True
+TRSKA2727-20,Erythromma lindenii,Erythromma lindenii,-0.0,False,False,False,False,False,True
+FBAQU491-10,Erythromma lindenii,Erythromma lindenii,-0.0,False,False,False,False,False,True
+ODOBP5490-16,Erythromma lindenii,Erythromma lindenii,0.00152,False,False,False,False,False,True
+AODON773-20,Erythromma lindenii,Erythromma lindenii,-0.0,False,False,False,False,False,True
+ZPLOD823-20,Erythromma lindenii,Erythromma lindenii,-0.0,False,False,False,False,False,True
+ZPLOD358-20,Erythromma lindenii,Erythromma lindenii,0.00764,False,False,True,True,False,True
+TRSKA2778-20,Erythromma lindenii,Erythromma lindenii,-0.0,False,False,False,False,False,True
+ZPLOD366-20,Erythromma lindenii,Erythromma lindenii,-0.0,False,False,False,False,False,True
+TRSKA2051-20,Erythromma lindenii,Erythromma lindenii,0.00153,False,False,False,False,False,True
+TRSKA2053-20,Erythromma lindenii,Erythromma lindenii,-0.0,False,False,False,False,False,True
+TRSKA2008-20,Erythromma lindenii,Erythromma lindenii,-0.0,False,False,False,False,False,True
+GBMH6702-09,Erythromma najas,Erythromma najas,0.00163,False,False,False,False,False,True
+ODOPL010-18,Erythromma najas,Erythromma najas,-0.0,False,False,False,False,False,True
+GBMH3362-07,Erythromma najas,Erythromma najas,-0.0,False,False,False,False,False,True
+AODON618-20,Erythromma najas,Erythromma najas,-0.0,False,False,False,False,False,True
+LEFIJ15499-21,Erythromma najas,Erythromma najas,0.00926,False,False,True,True,False,True
+GBMH3421-07,Erythromma najas,Erythromma najas,0.00163,False,False,False,False,False,True
+AODON049-20,Erythromma najas,Erythromma najas,0.00155,False,False,False,False,False,True
+AODON617-20,Erythromma najas,Erythromma najas,0.01313,False,False,True,True,False,True
+FBAQU492-10,Erythromma najas,Erythromma najas,-0.0,False,False,False,False,False,True
+GBMH3358-07,Erythromma najas,Erythromma najas,-0.0,False,False,False,False,False,True
+LEFIJ7810-18,Erythromma najas,Erythromma najas,-0.0,False,False,False,False,False,True
+AODON495-20,Erythromma najas,Erythromma najas,-0.0,False,False,False,False,False,True
+GBMH3412-07,Erythromma najas,Erythromma najas,-0.0,False,False,False,False,False,True
+BGEPL3206-25,Erythromma viridulum,Erythromma viridulum,0.00159,False,False,False,False,False,True
+TRSKA2677-20,Erythromma viridulum,Erythromma viridulum,-0.0,False,False,False,False,False,True
+PGCBG7107-20,Erythromma viridulum,Erythromma viridulum,0.00153,False,False,False,False,False,True
+AODON392-20,Erythromma viridulum,Erythromma viridulum,-0.0,False,False,False,False,False,True
+AODON092-20,Erythromma viridulum,Erythromma viridulum,-0.0,False,False,False,False,False,True
+BGEPL3209-25,Erythromma viridulum,Erythromma viridulum,-0.0,False,False,False,False,False,True
+TRSKA2693-20,Erythromma viridulum,Erythromma viridulum,0.00153,False,False,False,False,False,True
+PLSW076-20,Erythromma viridulum,Erythromma viridulum,-0.0,False,False,False,False,False,True
+TRSKA2665-20,Erythromma viridulum,Erythromma viridulum,-0.0,False,False,False,False,False,True
+AODON387-20,Erythromma viridulum,Erythromma viridulum,0.00305,False,False,False,False,False,True
+ZPLOD431-20,Ischnura elegans,Ischnura elegans,0.00152,False,False,False,False,False,True
+ODOPL048-19,Ischnura elegans,Ischnura elegans,-0.0,False,False,False,False,False,True
+BCAI157-26,Ischnura elegans,ambiguous,-0.0,False,False,False,False,False,False
+GBMIX1779-15,Ischnura elegans,Ischnura genei,-0.0,False,False,False,False,False,False
+AODON184-20,Ischnura elegans,Ischnura elegans,0.00153,False,False,False,False,False,True
+DTNHM5533-23,Ischnura elegans,ambiguous,-0.0,False,False,False,False,False,False
+AODON868-22,Ischnura elegans,ambiguous,-0.0,False,False,False,False,False,False
+ODOPL026-19,Ischnura elegans,ambiguous,-0.0,False,False,False,False,False,False
+GBMNA38097-19,Ischnura elegans,ambiguous,-0.0,False,False,False,False,False,False
+ODOPL028-19,Ischnura elegans,Ischnura elegans,-0.0,False,False,False,False,False,True
+DTNHM5532-23,Ischnura elegans,ambiguous,-0.0,False,False,False,False,False,False
+GBODO021-18,Ischnura elegans,ambiguous,-0.0,False,False,False,False,False,False
+LEFIJ5910-17,Ischnura elegans,ambiguous,-0.0,False,False,False,False,False,False
+GBODO061-18,Ischnura elegans,ambiguous,-0.0,False,False,False,False,False,False
+ODOBP5339-16,Ischnura elegans,Ischnura elegans,-0.0,False,False,False,False,False,True
+AODON784-20,Ischnura elegans,Ischnura elegans,0.00768,False,False,True,True,False,True
+GBMND4311-21,Ischnura elegans,ambiguous,-0.0,False,False,False,False,False,False
+LEFIJ15506-21,Ischnura elegans,ambiguous,0.00307,False,False,False,False,False,False
+ZPLOD454-20,Ischnura genei,Ischnura genei,0.00152,False,False,False,False,False,True
+FBAQU496-10,Ischnura pumilio,Ischnura pumilio,-0.0,False,False,False,False,False,True
+AODON039-20,Ischnura pumilio,Ischnura pumilio,-0.0,False,False,False,False,False,True
+BGEPL3219-25,Ischnura pumilio,Ischnura pumilio,-0.0,False,False,False,False,False,True
+GBAAM37383-25,Ischnura saharensis,ambiguous,-0.0,False,False,False,False,False,False
+GBAAW69085-24,Ischnura saharensis,Ischnura saharensis,-0.0,False,False,False,False,False,True
+AODON681-20,Leucorrhinia caudalis,Leucorrhinia caudalis,0.00152,False,False,False,False,False,True
+LEFIJ7816-18,Leucorrhinia dubia,Leucorrhinia dubia,0.00168,False,False,False,False,False,True
+ODOBP5352-16,Leucorrhinia dubia,Leucorrhinia dubia,0.00152,False,False,False,False,False,True
+ODOPL099-19,Leucorrhinia dubia,Leucorrhinia dubia,0.00485,False,False,True,False,False,True
+AODON903-22,Leucorrhinia dubia,Leucorrhinia dubia,-0.0,False,False,False,False,False,True
+AODON480-20,Leucorrhinia dubia,Leucorrhinia dubia,-0.0,False,False,False,False,False,True
+DTNHM5774-23,Leucorrhinia dubia,Leucorrhinia dubia,0.00918,False,False,True,True,False,True
+PLSW053-20,Leucorrhinia pectoralis,Leucorrhinia pectoralis,-0.0,False,False,False,False,False,True
+ODOPL024-19,Leucorrhinia pectoralis,Leucorrhinia pectoralis,-0.0,False,False,False,False,False,True
+AODON668-20,Leucorrhinia rubicunda,Leucorrhinia rubicunda,-0.0,False,False,False,False,False,True
+ZPLOD526-20,Libellula depressa,Libellula depressa,0.00152,False,False,False,False,False,True
+PLSW148-20,Libellula depressa,Libellula depressa,-0.0,False,False,False,False,False,True
+ANBIO098-19,Libellula depressa,Libellula depressa,0.02172,False,True,True,True,True,True
+ZPLOD534-20,Libellula depressa,Libellula depressa,0.00152,False,False,False,False,False,True
+PLSW034-20,Libellula fulva,Libellula fulva,0.00152,False,False,False,False,False,True
+AODON072-20,Libellula fulva,Libellula fulva,-0.0,False,False,False,False,False,True
+AODON515-20,Libellula fulva,Libellula fulva,-0.0,False,False,False,False,False,True
+LEFIJ5931-17,Libellula fulva,Libellula fulva,0.00155,False,False,False,False,False,True
+AODON482-20,Libellula quadrimaculata,Libellula quadrimaculata,0.00152,False,False,False,False,False,True
+ODOBP5331-16,Libellula quadrimaculata,Libellula quadrimaculata,-0.0,False,False,False,False,False,True
+AODON363-20,Libellula quadrimaculata,Libellula quadrimaculata,0.00156,False,False,False,False,False,True
+TRDOD003-14,Libellula quadrimaculata,Libellula quadrimaculata,-0.0,False,False,False,False,False,True
+ODOPL098-19,Libellula quadrimaculata,Libellula quadrimaculata,-0.0,False,False,False,False,False,True
+AODON613-20,Libellula quadrimaculata,Libellula quadrimaculata,-0.0,False,False,False,False,False,True
+PLSW031-20,Libellula quadrimaculata,Libellula quadrimaculata,0.00305,False,False,False,False,False,True
+TRDOD028-14,Libellula quadrimaculata,Libellula quadrimaculata,0.00152,False,False,False,False,False,True
+DTNHM10238-24,Libellula quadrimaculata,Libellula quadrimaculata,0.0032,False,False,False,False,False,True
+ZPLOD560-20,Nehalennia speciosa,Nehalennia speciosa,0.00156,False,False,False,False,False,True
+AODON718-20,Nehalennia speciosa,Nehalennia speciosa,0.00159,False,False,False,False,False,True
+BGEPL3307-25,Nehalennia speciosa,Nehalennia speciosa,-0.0,False,False,False,False,False,True
+AODON042-20,Orthetrum albistylum,Orthetrum albistylum,-0.0,False,False,False,False,False,True
+EDF010-18,Orthetrum albistylum,Orthetrum albistylum,-0.0,False,False,False,False,False,True
+AODON521-20,Orthetrum brunneum,Orthetrum brunneum,-0.0,False,False,False,False,False,True
+AODON217-20,Orthetrum brunneum,Orthetrum brunneum,0.00152,False,False,False,False,False,True
+HUAQM025-20,Orthetrum brunneum,Orthetrum brunneum,-0.0,False,False,False,False,False,True
+ZPLOD609-20,Orthetrum brunneum,Orthetrum brunneum,0.00152,False,False,False,False,False,True
+ODOBP2891-16,Orthetrum cancellatum,Orthetrum cancellatum,0.00152,False,False,False,False,False,True
+ODOPL051-19,Orthetrum cancellatum,Orthetrum cancellatum,0.00158,False,False,False,False,False,True
+AODON354-20,Orthetrum cancellatum,Orthetrum cancellatum,-0.0,False,False,False,False,False,True
+AODON369-20,Orthetrum cancellatum,Orthetrum cancellatum,0.00323,False,False,True,False,False,True
+GODO038-18,Orthetrum cancellatum,Orthetrum cancellatum,-0.0,False,False,False,False,False,True
+AODON635-20,Orthetrum cancellatum,Orthetrum cancellatum,-0.0,False,False,False,False,False,True
+FBAQU505-10,Orthetrum cancellatum,Orthetrum cancellatum,-0.0,False,False,False,False,False,True
+GBAAY74681-24,Orthetrum cancellatum,Orthetrum cancellatum,0.00152,False,False,False,False,False,True
+ZPLOD613-20,Orthetrum cancellatum,Orthetrum cancellatum,0.00152,False,False,False,False,False,True
+GBAAY74684-24,Orthetrum cancellatum,Orthetrum cancellatum,0.00152,False,False,False,False,False,True
+AODON636-20,Orthetrum cancellatum,Orthetrum cancellatum,0.00305,False,False,False,False,False,True
+TRSKA2115-20,Orthetrum cancellatum,Orthetrum cancellatum,-0.0,False,False,False,False,False,True
+GBAAY36359-24,Orthetrum coerulescens,Orthetrum coerulescens,-0.0,False,False,False,False,False,True
+DTNHM10237-24,Orthetrum coerulescens,Orthetrum coerulescens,0.00162,False,False,False,False,False,True
+AODON887-22,Orthetrum coerulescens,Orthetrum coerulescens,0.00159,False,False,False,False,False,True
+GBAAY36375-24,Orthetrum coerulescens,Orthetrum coerulescens,0.00152,False,False,False,False,False,True
+AODON071-20,Orthetrum coerulescens,Orthetrum coerulescens,0.00152,False,False,False,False,False,True
+GBAAX3578-24,Orthetrum coerulescens,Orthetrum coerulescens,0.00152,False,False,False,False,False,True
+GBAAW78360-24,Orthetrum coerulescens,Orthetrum coerulescens,0.00158,False,False,False,False,False,True
+ZPLOD626-20,Orthetrum coerulescens,Orthetrum coerulescens,-0.0,False,False,False,False,False,True
+AODON512-20,Orthetrum coerulescens,Orthetrum coerulescens,-0.0,False,False,False,False,False,True
+GBAAY36391-24,Orthetrum coerulescens,Orthetrum coerulescens,0.00152,False,False,False,False,False,True
+GBAAY36383-24,Orthetrum coerulescens,Orthetrum coerulescens,0.00152,False,False,False,False,False,True
+GBMHO1829-19,Pyrrhosoma elisabethae,Pyrrhosoma elisabethae,0.00315,False,False,False,False,False,True
+ARISE3190-26,Pyrrhosoma nymphula,Pyrrhosoma nymphula,-0.0,False,False,False,False,False,True
+GBMIN88636-17,Pyrrhosoma nymphula,Pyrrhosoma nymphula,0.00169,False,False,False,False,False,True
+FBAQU510-10,Pyrrhosoma nymphula,Pyrrhosoma nymphula,-0.0,False,False,False,False,False,True
+AODON348-20,Pyrrhosoma nymphula,Pyrrhosoma nymphula,-0.0,False,False,False,False,False,True
+LEFIJ29497-22,Pyrrhosoma nymphula,Pyrrhosoma nymphula,-0.0,False,False,False,False,False,True
+GBMIN88634-17,Pyrrhosoma nymphula,Pyrrhosoma nymphula,0.00318,False,False,False,False,False,True
+HMYZ137-21,Pyrrhosoma nymphula,Pyrrhosoma nymphula,-0.0,False,False,False,False,False,True
+AODON278-20,Pyrrhosoma nymphula,Pyrrhosoma nymphula,-0.0,False,False,False,False,False,True
+GBAAW56262-24,Pyrrhosoma nymphula,Pyrrhosoma nymphula,-0.0,False,False,False,False,False,True
+FBAQU321-09,Pyrrhosoma nymphula,Pyrrhosoma nymphula,-0.0,False,False,False,False,False,True
+ZPLOD703-20,Selysiothemis nigra,Selysiothemis nigra,0.00152,False,False,False,False,False,True
+AODON596-20,Sympetrum danae,Sympetrum danae,-0.0,False,False,False,False,False,True
+AODON260-20,Sympetrum danae,Sympetrum danae,0.00153,False,False,False,False,False,True
+AODON302-20,Sympetrum danae,Sympetrum danae,0.00462,False,False,True,False,False,True
+EDF020-20,Sympetrum depressiusculum,Sympetrum depressiusculum,-0.0,False,False,False,False,False,True
+LEFIJ29530-22,Sympetrum flaveolum,Sympetrum flaveolum,-0.0,False,False,False,False,False,True
+PLSW088-20,Sympetrum fonscolombii,Sympetrum fonscolombii,-0.0,False,False,False,False,False,True
+AODON689-20,Sympetrum fonscolombii,Sympetrum fonscolombii,0.00332,False,False,True,False,False,True
+ODOBP3557-16,Sympetrum fonscolombii,Sympetrum fonscolombii,0.00152,False,False,False,False,False,True
+ZPLOD772-20,Sympetrum meridionale,Sympetrum meridionale,0.00305,False,False,False,False,False,True
+GBEPT950-14,Sympetrum meridionale,Sympetrum meridionale,0.02991,True,True,True,True,True,True
+ODOBP5470-16,Sympetrum meridionale,Sympetrum meridionale,-0.0,False,False,False,False,False,True
+AODON377-20,Sympetrum meridionale,Sympetrum meridionale,0.00152,False,False,False,False,False,True
+ZPLOD781-20,Sympetrum pedemontanum,Sympetrum pedemontanum,0.00152,False,False,False,False,False,True
+AODON876-22,Sympetrum pedemontanum,Sympetrum pedemontanum,-0.0,False,False,False,False,False,True
+ODOBP2890-16,Sympetrum sanguineum,Sympetrum sanguineum,-0.0,False,False,False,False,False,True
+AODON353-20,Sympetrum sanguineum,Sympetrum sanguineum,0.00153,False,False,False,False,False,True
+PLSW067-20,Sympetrum sanguineum,Sympetrum sanguineum,0.00158,False,False,False,False,False,True
+AODON875-22,Sympetrum sanguineum,Sympetrum sanguineum,-0.0,False,False,False,False,False,True
+ZPLOD783-20,Sympetrum sanguineum,Sympetrum sanguineum,0.00458,False,False,True,False,False,True
+AODON112-20,Sympetrum sanguineum,Sympetrum sanguineum,0.00152,False,False,False,False,False,True
+AODON539-20,Sympetrum sanguineum,Sympetrum sanguineum,0.00152,False,False,False,False,False,True
+TRDOD086-14,Sympetrum striolatum,Sympetrum striolatum,0.00307,False,False,False,False,False,True
+ZPLOD800-20,Sympetrum striolatum,Sympetrum striolatum,0.00152,False,False,False,False,False,True
+AODON637-20,Sympetrum striolatum,Sympetrum striolatum,0.00152,False,False,False,False,False,True
+ANBIO101-19,Sympetrum striolatum,Sympetrum sanguineum,0.00613,False,False,True,True,False,False
+AODON139-20,Sympetrum striolatum,Sympetrum striolatum,-0.0,False,False,False,False,False,True
+AODON629-20,Sympetrum striolatum,Sympetrum striolatum,-0.0,False,False,False,False,False,True
+LEFIJ29531-22,Sympetrum vulgatum,Sympetrum vulgatum,0.00154,False,False,False,False,False,True
+AODON879-22,Sympetrum vulgatum,Sympetrum vulgatum,-0.0,False,False,False,False,False,True
+GBMHO3213-19,Sympetrum vulgatum,Sympetrum vulgatum,-0.0,False,False,False,False,False,True
+AODON272-20,Sympetrum vulgatum,Sympetrum vulgatum,0.00152,False,False,False,False,False,True
+AODON379-20,Sympetrum vulgatum,Sympetrum vulgatum,0.00305,False,False,False,False,False,True
+PLSW082-20,Sympetrum vulgatum,Sympetrum vulgatum,0.00152,False,False,False,False,False,True
+AODON118-20,Sympetrum vulgatum,Sympetrum vulgatum,-0.0,False,False,False,False,False,True
+ZPLOD811-20,Trithemis annulata,Trithemis annulata,0.00152,False,False,False,False,False,True

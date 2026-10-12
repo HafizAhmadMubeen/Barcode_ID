@@ -115,6 +115,7 @@ barcodeid/
 │   ├── phylo_baseline.py
 │   ├── features.py
 │   ├── ml_classifiers.py
+│   ├── bcm.py                 # best close match distance baseline (Meier et al. 2006)
 │   ├── experiment_full.py
 │   ├── experiment_incomplete.py
 │   ├── replicates.py          # robustness: re-run with seeds 1, 2, 3

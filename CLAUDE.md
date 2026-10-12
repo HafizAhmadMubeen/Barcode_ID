@@ -44,8 +44,11 @@ Accuracy on known species is not the point. The contribution is the comparison u
 - **Improvements before Phase 6 (approved 2026-10-12, done one at a time):** (1) significance tests and CIs, (2) best-close-match distance baseline, (3) results split by barcode-sharing species, (4) genus answer when ML says "unknown", (5) hold out every eligible species once in Condition B.
 - **Improvement 1 result (`src/significance.py`, seed 42):** 95% CIs by species-level bootstrap (2000 resamples); exact McNemar tests for 6 pairs, Holm-corrected, plus species-bootstrap CI of each difference. Condition A: no pair differs (all Holm p = 1.0, every CI includes 0); all methods ~92% (CIs ~85–98%). Condition B unknowns: NJ names a species 55–67 points more often than ML with threshold (Holm p < 0.0001, CI lower bound ≥ +17 points). k-NN vs RF on unknowns: McNemar significant (p ≤ 0.0005) but species CI reaches 0 (driven by 2 species). Condition B knowns: NJ 4.7–5.7 points above ML-with-threshold (species CI excludes 0; McNemar Holm p 0.08–0.31), the cost of ML's unknown threshold. Tables: `confidence_intervals.csv`, `significance_tests.csv`.
 
+- **Improvement 2 (decided 2026-10-12): best close match baseline (`src/bcm.py`, Meier et al. 2006).** Nearest training sequence by K2P on the shared alignment; ties between species → "ambiguous"; "unknown" above the cut-off. Main cut-off: Meier's rule (95th percentile of within-species training distances; 0.0235 in A, 0.0412 in B). Sensitivity: calibrated like ML (accept 90/95/99%) and fixed 2%. Added as a fifth method to Conditions A/B, replicates, evaluate, significance (3 extra pairs: BCM vs NJ, k-NN k6, RF k6) and runtime.
+- **Improvement 2 result:** Condition A 85.6% (lowest; 12.7% "ambiguous", all in barcode-sharing species; significantly below NJ/k-NN/RF, Holm p ≤ 0.011). Condition B unknowns with Meier's cut-off: wrongly named 15.8% (seed 42), 32.1/40.9/34.9% (seeds 1–3); k-NN safer in 3 of 4 seeds. Calibrated like k-NN (accept 95%) BCM also flags 100% of unknowns, but keeps only 76.7% of known queries correct vs k-NN 87.6%. So k-NN's safety comes mainly from its distance cut-off; ML's added value is fewer losses on known species. Runtime 31 ms/query (NJ 868, ML 3–4).
+
 ## Still open
-- Improvements 2–5 (in order), then Phase 6: report and slides.
+- Improvements 3–5 (in order), then Phase 6: report and slides.
 
 ## Pipeline
 1. **Data:** download, remove sequences with more than 5% N, trim to a consistent region, deduplicate, drop species with fewer than 3 sequences, split into train/test.
@@ -97,6 +100,7 @@ barcodeid/
 │   ├── phylo_baseline.py
 │   ├── features.py
 │   ├── ml_classifiers.py
+│   ├── bcm.py                 # best close match distance baseline (Meier et al. 2006)
 │   ├── experiment_full.py         # Condition A
 │   ├── experiment_incomplete.py   # Condition B
 │   ├── replicates.py          # robustness: re-run with seeds 1, 2, 3
