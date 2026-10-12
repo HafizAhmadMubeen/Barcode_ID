@@ -25,7 +25,7 @@ Output (results/tables/):
     sharing_split.csv            Condition B per seed: all / without / only barcode-sharing
 Figures (results/figures/):
     accuracy_A.png, runtime.png, condition_B_outcomes.png, A_vs_B.png,
-    threshold_curve.png, barcode_sharing.png
+    threshold_curve.png, barcode_sharing.png, loso_per_species.png
 
 Run from the repo root:
     python src/evaluate.py
@@ -289,9 +289,8 @@ def fig_runtime(summary_A):
     ax.set_xscale("log")
     ax.set_xlim(right=s.max() * 8)
     ax.xaxis.grid(True, color=GRID, linewidth=0.8)
-    fig.text(0.01, 0.01, "NJ: alignment + distances + tree + rule. Best close match: alignment + "
-             "distances + nearest match. ML: k-mer features + prediction (training excluded).",
-             fontsize=7.5, color=INK_2)
+    fig.text(0.01, 0.01, "NJ: alignment, distances, tree, rule. Best close match: alignment, "
+             "distances. ML: k-mers + prediction (no training).", fontsize=7.5, color=INK_2)
     save(fig, "runtime.png")
 
 
@@ -420,6 +419,42 @@ def fig_sharing(split):
     save(fig, "barcode_sharing.png")
 
 
+def fig_loso():
+    """Per-species chart for leave-one-species-out (improvement #5): how often
+    each method wrongly named a species that was missing from the database."""
+    path = TABLES_DIR / "loso_per_species.csv"
+    if not path.exists():
+        print("loso_per_species.csv missing: run src/leave_one_species_out.py (figure skipped)")
+        return
+    p = pd.read_csv(path)
+    shown = ["nj", "knn_k6", "rf_k6", "bcm"]
+    w = p.pivot(index="species", columns="method", values="false_assignment_rate")
+    sharing = p.groupby("species").barcode_sharing.first()
+    # Barcode-sharing species at the bottom; within each group, sort by NJ then name.
+    order = sorted(w.index, key=lambda s: (sharing[s], -w.loc[s, "nj"], s))
+    fig, ax = plt.subplots(figsize=(7.5, 10.5))
+    style(ax, "Every species held out once: how often it was wrongly named",
+          xlabel="Queries of the held-out species given a wrong species name (%)")
+    y = np.arange(len(order))[::-1]
+    n_clean = int((~sharing[order]).sum())
+    ax.axhspan(-0.5, len(order) - n_clean - 0.5, color="#f0efec", zorder=0)   # barcode-sharing band
+    offsets = {"nj": 0.24, "knn_k6": 0.08, "rf_k6": -0.08, "bcm": -0.24}
+    markers = {"nj": "D", "knn_k6": "o", "rf_k6": "s", "bcm": "^"}
+    for m in shown:
+        ax.scatter(100 * w.loc[order, m], y + offsets[m], s=34, marker=markers[m],
+                   color=FAMILY_COLOR[family(m)], edgecolor=SURFACE, linewidth=1.2, zorder=3,
+                   label=LABEL[m])
+    labels = [f"{s} *" if sharing[s] else s for s in order]
+    ax.set_yticks(y, labels, fontsize=8, style="italic")
+    ax.set_ylim(-0.7, len(order) - 0.3)
+    ax.set_xlim(-3, 103)
+    ax.xaxis.grid(True, color=GRID, linewidth=0.8)
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.4, -0.05), ncol=4, fontsize=8)
+    fig.text(0.01, 0.01, "* shaded rows: barcode-sharing species (share a BOLD BIN with another "
+             "species). Main cut-off for each method.", fontsize=7.5, color=INK_2)
+    save(fig, "loso_per_species.png")
+
+
 def main():
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     a = pd.read_csv(TABLES_DIR / "condition_A.csv")
@@ -461,6 +496,7 @@ def main():
     fig_A_vs_B(summary_A, summary_B)
     fig_threshold_curve(b, summary_B)
     fig_sharing(split)
+    fig_loso()
 
     pd.set_option("display.width", 200)
     print("barcode-sharing species (BIN):", ", ".join(sorted(sharing)))

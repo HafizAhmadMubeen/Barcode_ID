@@ -52,10 +52,11 @@ Accuracy on known species is not the point. The contribution is the comparison u
 - **Improvements 3+4 result (Condition B unknowns, main cut-offs, min–max over 4 seeds):** excluding barcode-sharing species, k-NN wrongly named **0% in every seed** and flagged them with the correct genus 90–100% (k=4) / 99–100% (k=6); RF 0–11.5% wrong, 54–97% safe + correct genus; BCM 0–16.8% wrong, 83–100%; NJ 13.5–100% wrong, 0–83%. Barcode-sharing species only: every method fails often (k-NN up to 72–74% wrong, NJ 61–100%). All species: k-NN 0–33% wrong with 66–100% safe + correct genus, so k-NN's "unknown" is about as informative as NJ's genus placement while far safer.
 
 - **Improvement 5 (decided 2026-10-12): leave-one-species-out (`src/leave_one_species_out.py`).** Each of the 39 species in multi-species genera held out alone: training = Condition A training minus that species, queries = all its sequences; own NJ tree, ML retrained and re-calibrated, BCM. Per-species results `results/tables/loso_per_species.csv`, overall `loso_overall.csv` (each species weighted equally). ~40 min total.
-- **Improvement 5 result (main cut-offs, mean over species):** all 39 species: NJ wrongly named 66.8% (mostly wrong for 67% of species), k-NN 14.4–14.5% (never wrong for 82% of species), RF 16.5–20.0%, BCM 19.0%. Excluding the 10 barcode-sharing species (29 species): **k-NN 0% wrong for every species** (k=4 and k=6) with correct genus 96% (k=4) / 99% (k=6); RF 0% (k=4) / 3.8% (k=6); BCM 4.2%; NJ 62.1%. Barcode-sharing only: all methods fail (k-NN 56%, RF 64–67%, BCM 62%, NJ 80%). New finding: NJ put 2 species in the **wrong genus** (Libellula quadrimaculata ↔ Leucorrhinia caudalis, 34 queries); no ML method or BCM ever named a wrong genus here. k-NN's only failure outside the barcode-sharing groups: 1 of 21 Sympetrum striolatum queries.
+- **Improvement 5 result (main cut-offs, mean over species):** all 39 species: NJ wrongly named 66.8% (mostly wrong for 67% of species), k-NN 14.4–14.5% (never wrong for 82% of species), RF 16.5–20.0%, BCM 19.0%. Excluding the 10 barcode-sharing species (29 species): **k-NN 0% wrong for every species** (k=4 and k=6) with correct genus 96% (k=4) / 99% (k=6); RF 0% (k=4) / 3.8% (k=6); BCM 4.2%; NJ 62.1%. Barcode-sharing only: all methods fail (k-NN 56%, RF 64–67%, BCM 62%, NJ 80%). New finding: NJ put 2 species in the **wrong genus** (Libellula quadrimaculata ↔ Leucorrhinia caudalis, 34 queries); no ML method or BCM ever named a wrong genus here. k-NN never wrongly named any query of a non-barcode-sharing species; its failures are all within the barcode-sharing groups (Sympetrum striolatum only 1 of 21; S. sanguineum and both Pyrrhosoma species 0%). Figure: `results/figures/loso_per_species.png`.
+- **Phase 6 decisions (2026-10-12):** report as Word (.docx) in `report/`, ~15–20 pages, scientific-paper style for the instructor; slides as PowerPoint in a separate `presentation/` folder, 15–20 min talk. Headline (head-to-head framing): ML matched the NJ tree on known species (~92% vs 92%) but wrongly named unknown species over 4× less often (k-NN 14% vs NJ 67%, 39 species held out one at a time) and was ~260× faster. Caveats (no significant Condition A difference, safety mainly from the distance cut-off, barcode-sharing limit) go in the body.
 
 ## Still open
-- Phase 6: report and slides.
+- Phase 6 sign-off: team reviews report and slides; every teammate can explain the Condition B result without notes.
 
 ## Pipeline
 1. **Data:** download, remove sequences with more than 5% N, trim to a consistent region, deduplicate, drop species with fewer than 3 sequences, split into train/test.
@@ -118,9 +119,11 @@ barcodeid/
 ├── notebooks/
 ├── results/
 │   ├── models/                # saved ML models (git-ignored, re-created by ml_classifiers.py)
+│   ├── loso/                  # leave-one-species-out predictions and trees
 │   ├── figures/
 │   └── tables/
-└── report/
+├── report/                    # build_report.py -> BarcodeID_report.docx
+└── presentation/              # build_slides.py -> BarcodeID_slides.pptx
 ```
 
 ## Status
@@ -131,7 +134,7 @@ barcodeid/
 - [x] Phase 3: ML classifiers
 - [x] Phase 4: Condition A and B experiment
 - [x] Phase 5: evaluation and plots
-- [ ] Phase 6: report and presentation
+- [ ] Phase 6: report and presentation (report + slides built 2026-10-12; waiting on team review and "every teammate can explain Condition B")
 
 Update this list as phases pass their validation.
 

@@ -42,6 +42,15 @@ python src/significance.py     # confidence intervals + significance tests -> re
 python src/leave_one_species_out.py  # every species held out once -> results/tables/loso_*.csv (~40 min)
 ```
 
+### Report and slides (Phase 6)
+These need the extra libraries in `requirements-report.txt` (`pip install -r requirements-report.txt`).
+Both read every number from `results/`, so re-run them after any change to the analysis:
+
+```bash
+python report/build_report.py        # -> report/BarcodeID_report.docx
+python presentation/build_slides.py  # -> presentation/BarcodeID_slides.pptx (with speaker notes)
+```
+
 ## Layout
 - `config.py`: seed (`SEED = 42`), paths, thresholds
 - `data/raw/`: untouched BOLD downloads
