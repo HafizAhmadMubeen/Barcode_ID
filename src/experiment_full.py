@@ -37,12 +37,12 @@ def to_wide(nj, ml, truth, bcm=None):
     for (model, k), g in ml.groupby(["model", "k"], sort=False):
         prefix = f"{model}_k{k}_"
         wide = wide.merge(
-            g[["query_id", "predicted_species", "confidence", "flagged_unknown"]
+            g[["query_id", "predicted_species", "predicted_genus", "confidence", "flagged_unknown"]
               + [c for c in g.columns if c.startswith("flagged_at_")]]
             .rename(columns=lambda c: c if c == "query_id" else prefix + c), on="query_id")
     if bcm is not None:
         assert set(bcm.query_id) == set(truth.query_id), "BCM queries differ"
-        keep = (["query_id", "predicted_species", "nearest_distance"]
+        keep = (["query_id", "predicted_species", "predicted_genus", "nearest_distance"]
                 + [c for c in bcm.columns if c.startswith("flagged_")])
         wide = wide.merge(bcm[keep].rename(columns=lambda c: c if c == "query_id" else f"bcm_{c}"),
                           on="query_id")

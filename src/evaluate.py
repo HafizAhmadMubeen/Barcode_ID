@@ -6,19 +6,26 @@ condition_B.csv), the replicate runs (replicates.py) and runtime.csv
 
 Outcome of a query whose species is NOT in the database (Condition B unknown),
 for every method: exactly one of
-    abstained     ML flagged "unknown", or NJ answered "ambiguous"     (safe)
-    near_relative named a wrong species from the correct genus         (wrong, but close)
-    other_genus   named a wrong species from another genus             (dangerous)
+    abstained     flagged "unknown", or answered "ambiguous"         (safe)
+    near_relative named a wrong species from the correct genus       (wrong, but close)
+    other_genus   named a wrong species from another genus           (dangerous)
 false_assignment_rate = near_relative + other_genus (any species named).
+flagged_correct_genus_rate = abstained AND the reported genus is right
+    ("safe and informative", improvement #4).
+
+Barcode-sharing species (improvement #3): species that share a BOLD BIN with
+another species. Condition B is also reported without them, for all 4 seeds.
 
 Output (results/tables/):
-    summary_A.csv              accuracy, macro precision/recall, abstain rate, runtime
-    per_species_A.csv          precision/recall per species and method
-    summary_B.csv              unknown and known queries, every method and threshold
-    replicates_summary.csv     the key numbers for seed 42 and each replicate seed
+    summary_A.csv                accuracy, macro precision/recall, abstain rate, runtime
+    per_species_A.csv            precision/recall per species and method
+    summary_B.csv                unknown and known queries, every method and threshold
+    replicates_summary.csv       the key numbers for seed 42 and each replicate seed
+    barcode_sharing_species.csv  the barcode-sharing species and their shared BINs
+    sharing_split.csv            Condition B per seed: all / without / only barcode-sharing
 Figures (results/figures/):
     accuracy_A.png, runtime.png, condition_B_outcomes.png, A_vs_B.png,
-    threshold_curve.png
+    threshold_curve.png, barcode_sharing.png
 
 Run from the repo root:
     python src/evaluate.py
@@ -35,8 +42,8 @@ from sklearn.metrics import precision_recall_fscore_support  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from config import (  # noqa: E402
-    FIGURES_DIR, REPLICATE_SEEDS, RESULTS_DIR, SEED, SENSITIVITY_ACCEPT_RATES, TABLES_DIR,
-    UNKNOWN_ACCEPT_RATE,
+    FIGURES_DIR, PROCESSED_DIR, REPLICATE_SEEDS, RESULTS_DIR, SEED, SENSITIVITY_ACCEPT_RATES,
+    TABLES_DIR, UNKNOWN_ACCEPT_RATE,
 )
 
 ML = ["knn_k4", "knn_k6", "rf_k4", "rf_k6"]
@@ -50,10 +57,13 @@ MAIN_RATE = round(UNKNOWN_ACCEPT_RATE * 100)
 # (safe / close / dangerous, always with a text label).
 FAMILY_COLOR = {"nj": "#2a78d6", "knn": "#eb6834", "rf": "#1baf7a", "bcm": "#4a3aa7"}
 MAIN_SETTING = {"nj": "rule", "bcm": "Meier cut-off"}   # ML main setting: "accept 95%"
-OUTCOME_COLOR = {"abstained": "#0ca30c", "near_relative": "#fab219", "other_genus": "#d03b3b"}
-OUTCOME_LABEL = {"abstained": "Flagged unknown / abstained (safe)",
+OUTCOME_COLOR = {"abstained_genus": "#0ca30c", "abstained_other": "#8fd18f",
+                 "near_relative": "#fab219", "other_genus": "#d03b3b"}
+OUTCOME_LABEL = {"abstained_genus": "Flagged unknown + correct genus (safe, informative)",
+                 "abstained_other": "Flagged unknown, no correct genus (safe)",
                  "near_relative": "Wrong species, correct genus",
                  "other_genus": "Wrong species, wrong genus (dangerous)"}
+SUBSET_COLOR = {"all": "#a8a69c", "excluding barcode-sharing": "#52514e"}
 INK, INK_2, GRID, SURFACE = "#0b0b0b", "#52514e", "#e1e0d9", "#fcfcfb"
 
 
@@ -86,13 +96,70 @@ def answer(df, method, setting=None):
     return predicted.where(~df[f"{method}_{column}"], "unknown")
 
 
-def outcome_rates(df, ans):
-    """Shares of abstained / near_relative / other_genus for unknown queries."""
+def genus_given(df, method):
+    """The genus each method reports alongside its answer (improvement #4).
+
+    NJ: the shared genus of the clade's species. ML/BCM: nearest or most
+    probable genus, reported even when the species is flagged "unknown".
+    """
+    return df[f"{method}_predicted_genus"].fillna("")
+
+
+def outcome_rates(df, ans, genus=None):
+    """Shares of abstained / near_relative / other_genus for unknown queries.
+
+    With genus given, also the share that abstained AND named the correct genus
+    ("safe and informative": e.g. "unknown species, probably a Sympetrum").
+    """
     abstained = ans.isin(["unknown", "ambiguous"])
     same_genus = ans.str.split().str[0] == df.true_genus
-    return {"abstained": abstained.mean(),
-            "near_relative": (~abstained & same_genus).mean(),
-            "other_genus": (~abstained & ~same_genus).mean()}
+    out = {"abstained": abstained.mean(),
+           "near_relative": (~abstained & same_genus).mean(),
+           "other_genus": (~abstained & ~same_genus).mean()}
+    if genus is not None:
+        out["abstained_genus"] = (abstained & (genus == df.true_genus)).mean()
+    return out
+
+
+def barcode_sharing_species(meta):
+    """Species whose specimens share a BOLD BIN with another species (improvement #3).
+
+    BINs are BOLD's own sequence clusters, so this list does not depend on any
+    of our methods. Returns a DataFrame: species, bins, shares_bin_with.
+    """
+    with_bin = meta[meta.bin.notna() & (meta.bin != "")]
+    rows = []
+    for species, g in with_bin.groupby("species"):
+        bins = set(g.bin)
+        others = sorted(set(with_bin[with_bin.bin.isin(bins)].species) - {species})
+        if others:
+            rows.append({"species": species, "bins": ";".join(sorted(bins)),
+                         "shares_bin_with": ";".join(others)})
+    return pd.DataFrame(rows)
+
+
+def sharing_split(b, sharing, seed):
+    """Condition B results for all held-out species, without and only the
+    barcode-sharing ones (main setting of each method)."""
+    rows = []
+    subsets = {"all": lambda s: s == s,
+               "excluding barcode-sharing": lambda s: ~s.isin(sharing),
+               "barcode-sharing only": lambda s: s.isin(sharing)}
+    for name, keep in subsets.items():
+        unk = b[(b.query_type == "unknown") & keep(b.true_species)]
+        kno = b[(b.query_type == "known") & keep(b.true_species)]
+        if unk.empty:
+            continue
+        for m in METHODS:
+            o = outcome_rates(unk, answer(unk, m, "main"), genus_given(unk, m))
+            rows.append({"seed": seed, "subset": name, "method": m,
+                         "unknown_false_assignment_rate": o["near_relative"] + o["other_genus"],
+                         "unknown_flagged_rate": o["abstained"],
+                         "unknown_flagged_correct_genus_rate": o["abstained_genus"],
+                         "known_accuracy": (answer(kno, m, "main") == kno.true_species).mean(),
+                         "n_unknown": len(unk), "n_unknown_species": unk.true_species.nunique(),
+                         "n_known": len(kno)})
+    return rows
 
 
 def summarize_A(a, runtime):
@@ -127,10 +194,11 @@ def summarize_B(b):
     rows = []
     for m, rate, setting in settings:
         u_ans, k_ans = answer(unk, m, rate), answer(kno, m, rate)
-        o = outcome_rates(unk, u_ans)
+        o = outcome_rates(unk, u_ans, genus_given(unk, m))
         rows.append({
             "method": m, "setting": setting,
             "unknown_flagged_rate": o["abstained"],
+            "unknown_flagged_correct_genus_rate": o["abstained_genus"],
             "unknown_false_assignment_rate": o["near_relative"] + o["other_genus"],
             "unknown_near_relative_rate": o["near_relative"],
             "unknown_other_genus_rate": o["other_genus"],
@@ -147,8 +215,9 @@ def key_numbers(a, b, seed):
     row = {"seed": seed}
     for m in METHODS:
         row[f"A_acc_{m}"] = (answer(a, m) == a.true_species).mean()
-        o = outcome_rates(unk, answer(unk, m, "main"))
+        o = outcome_rates(unk, answer(unk, m, "main"), genus_given(unk, m))
         row[f"B_false_assign_{m}"] = o["near_relative"] + o["other_genus"]
+        row[f"B_safe_genus_{m}"] = o["abstained_genus"]
     # Winners; ties are listed together ("knn_k4/knn_k6").
     best_a = max(row[f"A_acc_{m}"] for m in METHODS)
     best_b = min(row[f"B_false_assign_{m}"] for m in METHODS)
@@ -240,7 +309,9 @@ def fig_outcomes(summary_B):
     for yi, (m, setting, _) in zip(y, rows):
         left = 0
         r = s.loc[(m, setting)]
-        parts = {"abstained": r.unknown_flagged_rate, "near_relative": r.unknown_near_relative_rate,
+        parts = {"abstained_genus": r.unknown_flagged_correct_genus_rate,
+                 "abstained_other": r.unknown_flagged_rate - r.unknown_flagged_correct_genus_rate,
+                 "near_relative": r.unknown_near_relative_rate,
                  "other_genus": r.unknown_other_genus_rate}
         for key, val in parts.items():
             ax.barh(yi, 100 * val, left=left, height=0.62, color=OUTCOME_COLOR[key],
@@ -322,10 +393,41 @@ def fig_threshold_curve(b, summary_B):
     save(fig, "threshold_curve.png")
 
 
+def fig_sharing(split):
+    """Wrongly named unknowns, all held-out species vs without barcode-sharing ones."""
+    d = split[split.subset.isin(SUBSET_COLOR)]
+    fig, ax = plt.subplots(figsize=(7.5, 4.2))
+    style(ax, "Condition B: unknown species wrongly named, with and without barcode sharing",
+          ylabel="Unknown queries wrongly named (%)")
+    x = np.arange(len(METHODS))
+    width = 0.36
+    for j, (subset, color) in enumerate(SUBSET_COLOR.items()):
+        g = d[d.subset == subset]
+        means = [100 * g[g.method == m].unknown_false_assignment_rate.mean() for m in METHODS]
+        xs = x + (j - 0.5) * width
+        ax.bar(xs, means, width=width, color=color, edgecolor=SURFACE, linewidth=2,
+               label=f"{subset.capitalize()} held-out species (mean of 4 seeds)")
+        for xi, m in zip(xs, METHODS):
+            seeds = 100 * g[g.method == m].unknown_false_assignment_rate.to_numpy()
+            ax.scatter([xi] * len(seeds), seeds, s=22, color=INK, edgecolor=SURFACE,
+                       linewidth=1.2, zorder=3)
+    ax.set_xticks(x, [LABEL[m].replace(" (", "\n(") for m in METHODS])
+    ax.set_ylim(0, 102)
+    ax.yaxis.grid(True, color=GRID, linewidth=0.8)
+    ax.legend(frameon=False, loc="upper right", fontsize=8)
+    fig.text(0.01, 0.01, "Barcode-sharing = shares a BOLD BIN with another species (10 species). "
+             "Dots: the 4 seeds. Main cut-off for each method.", fontsize=7.5, color=INK_2)
+    save(fig, "barcode_sharing.png")
+
+
 def main():
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     a = pd.read_csv(TABLES_DIR / "condition_A.csv")
     b = pd.read_csv(TABLES_DIR / "condition_B.csv")
+    meta = pd.read_csv(PROCESSED_DIR / "metadata.csv")
+    sharing_table = barcode_sharing_species(meta)
+    sharing_table.to_csv(TABLES_DIR / "barcode_sharing_species.csv", index=False)
+    sharing = set(sharing_table.species)
 
     runtime = {}
     if (TABLES_DIR / "runtime.csv").exists():
@@ -340,22 +442,31 @@ def main():
     summary_B.to_csv(TABLES_DIR / "summary_B.csv", index=False)
 
     reps = [key_numbers(a, b, SEED)]
+    split_rows = sharing_split(b, sharing, SEED)
     for seed in REPLICATE_SEEDS:
         d = RESULTS_DIR / "replicates" / f"seed_{seed}"
         if (d / "condition_B.csv").exists():
-            reps.append(key_numbers(pd.read_csv(d / "condition_A.csv"),
-                                    pd.read_csv(d / "condition_B.csv"), seed))
+            b_seed = pd.read_csv(d / "condition_B.csv")
+            reps.append(key_numbers(pd.read_csv(d / "condition_A.csv"), b_seed, seed))
+            split_rows += sharing_split(b_seed, sharing, seed)
         else:
             print(f"replicate seed {seed} missing: run src/replicates.py")
     pd.DataFrame(reps).round(4).to_csv(TABLES_DIR / "replicates_summary.csv", index=False)
+    split = pd.DataFrame(split_rows).round(4)
+    split.to_csv(TABLES_DIR / "sharing_split.csv", index=False)
 
     fig_accuracy(summary_A, reps)
     fig_runtime(summary_A)
     fig_outcomes(summary_B)
     fig_A_vs_B(summary_A, summary_B)
     fig_threshold_curve(b, summary_B)
+    fig_sharing(split)
 
     pd.set_option("display.width", 200)
+    print("barcode-sharing species (BIN):", ", ".join(sorted(sharing)))
+    view = split.groupby(["subset", "method"], sort=False)[
+        ["unknown_false_assignment_rate", "unknown_flagged_correct_genus_rate"]].agg(["min", "max"])
+    print("\nCondition B unknowns across 4 seeds (min-max), main cut-offs:\n", view.round(3).to_string())
     print("summary_A:\n", summary_A.to_string(index=False))
     print("\nsummary_B:\n", summary_B.drop(columns=["n_unknown", "n_known"]).to_string(index=False))
     print("\nreplicates:\n", pd.DataFrame(reps).round(3).to_string(index=False))

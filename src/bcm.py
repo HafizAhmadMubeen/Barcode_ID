@@ -57,14 +57,20 @@ def load_distances():
 
 
 def best_match(D_sub, train_species):
-    """For each query row of D_sub: (species or 'ambiguous', nearest distance)."""
-    answers, nearest = [], []
+    """For each query row of D_sub: species (or 'ambiguous'), genus, nearest distance.
+
+    The genus is that of the equally-nearest matches ("" if they span several
+    genera); it is reported even when the species is "unknown" (improvement #4).
+    """
+    answers, genera, nearest = [], [], []
     for row in D_sub:
         d = row.min()
         tied = {train_species[j] for j in np.where(row <= d + TIE)[0]}
-        answers.append(tied.pop() if len(tied) == 1 else "ambiguous")
+        tied_genera = {s.split()[0] for s in tied}
+        answers.append(next(iter(tied)) if len(tied) == 1 else "ambiguous")
+        genera.append(next(iter(tied_genera)) if len(tied_genera) == 1 else "")
         nearest.append(d)
-    return answers, np.array(nearest)
+    return answers, genera, np.array(nearest)
 
 
 def meier_cutoff(D_train, species):
@@ -101,8 +107,9 @@ def run_bcm(train, queries, seed=SEED):
     cutoffs = {"meier": meier_cutoff(D_train, species), "fixed_2": FIXED_CUTOFF}
     cutoffs.update({f"at_{round(r * 100)}": c for r, c in calibrated_cutoffs(D_train, species, seed).items()})
 
-    answers, nearest = best_match(D[np.ix_(q_rows, t_rows)], species)
+    answers, genera, nearest = best_match(D[np.ix_(q_rows, t_rows)], species)
     preds = pd.DataFrame({"query_id": list(queries.seq_id), "predicted_species": answers,
+                          "predicted_genus": genera,
                           "nearest_distance": nearest.round(5) + 0.0})   # + 0.0 turns -0.0 into 0.0
     preds["flagged_unknown"] = nearest > cutoffs["meier"]           # main rule
     for name, cut in cutoffs.items():

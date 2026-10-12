@@ -1,0 +1,11 @@
+species,bins,shares_bin_with
+Coenagrion ornatum,BOLD:AAJ0782,Coenagrion puella;Coenagrion pulchellum
+Coenagrion puella,BOLD:AAJ0782,Coenagrion ornatum;Coenagrion pulchellum
+Coenagrion pulchellum,BOLD:AAJ0782,Coenagrion ornatum;Coenagrion puella
+Ischnura elegans,BOLD:AAE5570,Ischnura genei;Ischnura saharensis
+Ischnura genei,BOLD:AAE5570,Ischnura elegans;Ischnura saharensis
+Ischnura saharensis,BOLD:AAE5570,Ischnura elegans;Ischnura genei
+Pyrrhosoma elisabethae,BOLD:AFB7889,Pyrrhosoma nymphula
+Pyrrhosoma nymphula,BOLD:AAD5734;BOLD:AFB7889,Pyrrhosoma elisabethae
+Sympetrum sanguineum,BOLD:AAB2237,Sympetrum striolatum
+Sympetrum striolatum,BOLD:AAB2236;BOLD:AAB2237,Sympetrum sanguineum

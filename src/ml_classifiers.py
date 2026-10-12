@@ -64,6 +64,28 @@ def confidence(model, name, X):
     return model.predict_proba(X).max(axis=1)
 
 
+def genus_answer(model, name, X, y_train):
+    """The genus each query most likely belongs to (improvement #4).
+
+    Useful when the species is flagged "unknown": the model can still say
+    "probably a Sympetrum". The genus is the first word of the species name.
+      k-NN: genus of the nearest training sequence ("" if equally near
+            sequences belong to different genera).
+      RF:   genus of its most probable species. (Summing probabilities per
+            genus was tried first, but when RF is unsure it favours genera with
+            many species, e.g. Coenagrion; decided 2026-10-12.)
+    """
+    if name == "knn":
+        genus = np.array([s.split()[0] for s in y_train])
+        dist, idx = model.kneighbors(X, n_neighbors=5)
+        out = []
+        for d, i in zip(dist, idx):
+            tied = set(genus[i[d <= d[0] + 1e-12]])
+            out.append(tied.pop() if len(tied) == 1 else "")
+        return np.array(out)
+    return np.array([s.split()[0] for s in model.predict(X)])
+
+
 def calibrate_thresholds(name, X, y, seed=SEED):
     """Confidence cut-offs that accept a given share of known-species queries.
 
@@ -122,6 +144,7 @@ def run_ml(train_ids, y_train, query_ids, models_dir, seed=SEED):
             table = pd.DataFrame({
                 "model": name, "k": k, "query_id": list(query_ids),
                 "predicted_species": predicted,                       # always a known species
+                "predicted_genus": genus_answer(model, name, X_test, y_train),
                 "confidence": np.round(conf, 4),
                 "flagged_unknown": flagged,
                 "predicted_with_unknown": np.where(flagged, UNKNOWN, predicted),
