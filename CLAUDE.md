@@ -41,8 +41,11 @@ Accuracy on known species is not the point. The contribution is the comparison u
 - **Phase 5 design (decided 2026-10-09):** threshold sensitivity at accept rates 90/95/99% plus a full threshold curve; 3 replicate runs (seeds 1, 2, 3) each with a new Condition A split, new held-out species (same 1-per-genus rule) and retrained models, in `results/replicates/` (seed 42 stays the main result); runtime as batch timing of the full pipeline on the 236 Condition A queries, median of 3 runs (NJ: MAFFT + K2P + tree + rule; ML: k-mer features + prediction, training excluded).
 - **Phase 5 results:** runtime per query NJ 868 ms vs ML 3.1–4.0 ms (~260× faster). Condition A accuracy across 4 seeds: NJ 89.4–93.6%, k-NN 93.2–96.2%, RF 89.0–96.6%; k-NN best or tied-best in 3 of 4 seeds (RF k=4 in seed 3), NJ never best. Condition B false assignment (unknown queries named as a species, ML at 95% threshold): k-NN safest in all 4 seeds (k=6: 0%, 4.5%, 32.3%, 33.2%), RF k=6 11.5–41.8%, NJ 46.4–97.8%. All of k-NN's false assignments come from barcode-sharing species (Coenagrion pulchellum, Ischnura elegans, I. saharensis); excluding those, k-NN k=6 named 0% in every seed, RF 2.4–13.8%, NJ 34.3–100%. NJ never put an unknown in the wrong genus; RF without threshold did (22–31%, seed 42).
 
+- **Improvements before Phase 6 (approved 2026-10-12, done one at a time):** (1) significance tests and CIs, (2) best-close-match distance baseline, (3) results split by barcode-sharing species, (4) genus answer when ML says "unknown", (5) hold out every eligible species once in Condition B.
+- **Improvement 1 result (`src/significance.py`, seed 42):** 95% CIs by species-level bootstrap (2000 resamples); exact McNemar tests for 6 pairs, Holm-corrected, plus species-bootstrap CI of each difference. Condition A: no pair differs (all Holm p = 1.0, every CI includes 0); all methods ~92% (CIs ~85–98%). Condition B unknowns: NJ names a species 55–67 points more often than ML with threshold (Holm p < 0.0001, CI lower bound ≥ +17 points). k-NN vs RF on unknowns: McNemar significant (p ≤ 0.0005) but species CI reaches 0 (driven by 2 species). Condition B knowns: NJ 4.7–5.7 points above ML-with-threshold (species CI excludes 0; McNemar Holm p 0.08–0.31), the cost of ML's unknown threshold. Tables: `confidence_intervals.csv`, `significance_tests.csv`.
+
 ## Still open
-- Phase 6: report and slides.
+- Improvements 2–5 (in order), then Phase 6: report and slides.
 
 ## Pipeline
 1. **Data:** download, remove sequences with more than 5% N, trim to a consistent region, deduplicate, drop species with fewer than 3 sequences, split into train/test.
@@ -98,6 +101,7 @@ barcodeid/
 │   ├── experiment_incomplete.py   # Condition B
 │   ├── replicates.py          # robustness: re-run with seeds 1, 2, 3
 │   ├── runtime.py             # timing benchmark (NJ vs ML, same queries)
+│   ├── significance.py        # confidence intervals + McNemar tests
 │   └── evaluate.py
 ├── notebooks/
 ├── results/

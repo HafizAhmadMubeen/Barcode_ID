@@ -37,6 +37,7 @@ python src/experiment_incomplete.py  # Condition B -> results/tables/condition_B
 python src/replicates.py       # robustness: seeds 1, 2, 3 -> results/replicates/ (~30 min)
 python src/runtime.py          # timing benchmark -> results/tables/runtime.csv (~15 min, idle machine)
 python src/evaluate.py         # summary tables -> results/tables/, figures -> results/figures/
+python src/significance.py     # confidence intervals + significance tests -> results/tables/
 ```
 
 ## Layout

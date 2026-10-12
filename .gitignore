@@ -27,3 +27,6 @@ data/processed/*.npy
 
 # Replicate models (re-created by src/replicates.py)
 results/replicates/*/models/
+
+# Personal progress notes (not shared)
+MY_PROGRESS_NOTES.md
