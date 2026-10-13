@@ -13,6 +13,10 @@ Method:
      Test sequences are in the tree, but their species labels are never used:
      only training labels decide a prediction.
   3. Apply the rule above to every test query.
+  4. Optional cut-off ("NJ tree + cut-off"): also flag a query as "unknown" if
+     its tree distance to the nearest training sequence is larger than for
+     95% of training sequences (calibrated inside the same tree, training
+     sequences only). Plain NJ ignores these flags.
 
 Input:  data/processed/aligned.fasta, metadata.csv, split_A.csv
 Output: results/nj_tree.nwk                       (cached; rebuilt if inputs change)
@@ -32,7 +36,9 @@ from Bio import Phylo, SeqIO
 from Bio.Phylo.TreeConstruction import DistanceMatrix, DistanceTreeConstructor
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from config import PROCESSED_DIR, RESULTS_DIR, TABLES_DIR  # noqa: E402
+from config import (  # noqa: E402
+    PROCESSED_DIR, RESULTS_DIR, SENSITIVITY_ACCEPT_RATES, TABLES_DIR, UNKNOWN_ACCEPT_RATE,
+)
 from distances import k2p_matrix  # noqa: E402
 
 ALIGNED = PROCESSED_DIR / "aligned.fasta"
@@ -70,6 +76,35 @@ def identify(tree, query_ids, train_species, genus_of):
             "ref_species_in_clade": ";".join(species),
         })
     return results
+
+
+def nearest_training_distance(tree, train_ids):
+    """Tree (patristic) distance from every leaf to its nearest OTHER training leaf.
+
+    Used for NJ's optional 'unknown' cut-off: a query far from every reference
+    on the tree is probably a species that is not in the reference set.
+    Distances along the tree are depth(a) + depth(b) - 2 * depth(common ancestor).
+    Instead of comparing every pair, each node remembers the two shallowest
+    training leaves below it; walking up from a leaf then finds its nearest one.
+    """
+    depth = tree.depths()                                  # clade -> distance from root
+    best = {}                                              # clade -> [(depth, name), ...] (2 smallest)
+    for clade in tree.find_clades(order="postorder"):
+        if clade.is_terminal():
+            best[clade] = [(depth[clade], clade.name)] if clade.name in train_ids else []
+        else:
+            below = sorted(x for child in clade.clades for x in best[child])
+            best[clade] = below[:2]
+    out = {}
+    for leaf in tree.get_terminals():
+        nearest = np.inf
+        for anc in [tree.root] + tree.get_path(leaf)[:-1]:
+            for d_leaf, name in best[anc]:
+                if name != leaf.name:                      # never the leaf itself
+                    nearest = min(nearest, d_leaf + depth[leaf] - 2 * depth[anc])
+                    break
+        out[leaf.name] = nearest
+    return out
 
 
 def run_nj(train, queries, tree_path, cache_inputs):
@@ -110,6 +145,19 @@ def run_nj(train, queries, tree_path, cache_inputs):
     start = time.time()
     train_species = dict(zip(train.seq_id, train.species))
     preds = pd.DataFrame(identify(tree, list(queries.seq_id), train_species, genus_of))
+
+    # --- Optional 'unknown' cut-off ("NJ tree + cut-off", decided 2026-10-13) ---
+    # Calibrated on training leaves only, inside the same tree: each training
+    # sequence's tree distance to its nearest OTHER training sequence. The
+    # cut-off accepts UNKNOWN_ACCEPT_RATE of these, like the ML thresholds.
+    dist = nearest_training_distance(tree, set(train.seq_id))
+    scores = np.array([dist[t] for t in train.seq_id])
+    cutoffs = {rate: float(np.percentile(scores, 100 * rate)) for rate in SENSITIVITY_ACCEPT_RATES}
+    preds["nearest_distance"] = [round(dist[q], 5) for q in queries.seq_id]
+    preds["flagged_unknown"] = preds.nearest_distance > cutoffs[UNKNOWN_ACCEPT_RATE]
+    for rate, cut in cutoffs.items():
+        preds[f"flagged_at_{round(rate * 100)}"] = preds.nearest_distance > cut
+    preds.attrs["cutoffs"] = cutoffs
     return preds, tree_seconds, time.time() - start
 
 
@@ -126,6 +174,9 @@ def main():
     preds["correct"] = preds.predicted_species == preds.true_species
     TABLES_DIR.mkdir(parents=True, exist_ok=True)
     preds.to_csv(TABLES_DIR / "nj_predictions_A.csv", index=False)
+    pd.DataFrame([{"accept_rate": r, "tree_distance_max": round(c, 5)}
+                  for r, c in preds.attrs["cutoffs"].items()]).to_csv(
+        TABLES_DIR / "nj_thresholds.csv", index=False)
     # A cached tree has no build time: keep the one measured when it was built.
     timing_file = TABLES_DIR / "nj_timing_A.csv"
     if tree_seconds != tree_seconds and timing_file.exists():     # NaN check

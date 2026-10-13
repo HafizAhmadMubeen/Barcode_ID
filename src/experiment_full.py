@@ -34,6 +34,13 @@ def to_wide(nj, ml, truth, bcm=None):
     wide = truth.merge(
         nj[["query_id", "predicted_species", "predicted_genus", "ref_species_in_clade"]]
         .rename(columns=lambda c: c if c == "query_id" else f"nj_{c}"), on="query_id")
+    # "NJ tree + cut-off" (njc): the same tree answers, plus the tree-distance
+    # 'unknown' flags. Plain NJ above ignores the flags.
+    if "flagged_unknown" in nj.columns:
+        keep = (["query_id", "predicted_species", "predicted_genus", "nearest_distance"]
+                + [c for c in nj.columns if c.startswith("flagged_")])
+        wide = wide.merge(nj[keep].rename(columns=lambda c: c if c == "query_id" else f"njc_{c}"),
+                          on="query_id")
     for (model, k), g in ml.groupby(["model", "k"], sort=False):
         prefix = f"{model}_k{k}_"
         wide = wide.merge(

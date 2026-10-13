@@ -1,5 +1,5 @@
-seed,A_acc_nj,B_false_assign_nj,B_safe_genus_nj,A_acc_knn_k4,B_false_assign_knn_k4,B_safe_genus_knn_k4,A_acc_knn_k6,B_false_assign_knn_k6,B_safe_genus_knn_k6,A_acc_rf_k4,B_false_assign_rf_k4,B_safe_genus_rf_k4,A_acc_rf_k6,B_false_assign_rf_k6,B_safe_genus_rf_k6,A_acc_bcm,B_false_assign_bcm,B_safe_genus_bcm,A_best,B_safest
-42,0.9237,0.6691,0.3309,0.9322,0.0,0.9928,0.9322,0.0,1.0,0.9153,0.0863,0.6043,0.9237,0.1151,0.6691,0.8559,0.1583,0.8417,knn_k4/knn_k6,knn_k4/knn_k6
-1,0.9025,0.9776,0.0224,0.9449,0.0448,0.8881,0.9492,0.0448,0.9478,0.9322,0.0896,0.8881,0.9237,0.1567,0.8433,0.8686,0.3209,0.6791,knn_k6,knn_k4/knn_k6
-2,0.8941,0.4636,0.5364,0.9407,0.3273,0.6727,0.9407,0.3227,0.6773,0.9153,0.3545,0.5227,0.8898,0.3864,0.4909,0.8686,0.4091,0.5909,knn_k4/knn_k6,knn_k6
-3,0.9364,0.4698,0.5129,0.9619,0.3319,0.6681,0.9619,0.3319,0.6638,0.9661,0.3405,0.5776,0.9619,0.4181,0.4052,0.8602,0.3491,0.6509,rf_k4,knn_k4/knn_k6
+seed,A_acc_nj,B_false_assign_nj,B_safe_genus_nj,A_acc_knn_k4,B_false_assign_knn_k4,B_safe_genus_knn_k4,A_acc_knn_k6,B_false_assign_knn_k6,B_safe_genus_knn_k6,A_acc_rf_k4,B_false_assign_rf_k4,B_safe_genus_rf_k4,A_acc_rf_k6,B_false_assign_rf_k6,B_safe_genus_rf_k6,A_acc_bcm,B_false_assign_bcm,B_safe_genus_bcm,A_acc_njc,B_false_assign_njc,B_safe_genus_njc,A_best,B_safest
+42,0.9237,0.6691,0.3309,0.9322,0.0,0.9928,0.9322,0.0,1.0,0.9153,0.0863,0.6043,0.9237,0.1151,0.6691,0.8559,0.1583,0.8417,0.9237,0.0,1.0,knn_k4/knn_k6,knn_k4/knn_k6/njc
+1,0.9025,0.9776,0.0224,0.9449,0.0448,0.8881,0.9492,0.0448,0.9478,0.9322,0.0896,0.8881,0.9237,0.1567,0.8433,0.8686,0.3209,0.6791,0.9025,0.0224,0.9776,knn_k6,njc
+2,0.8941,0.4636,0.5364,0.9407,0.3273,0.6727,0.9407,0.3227,0.6773,0.9153,0.3545,0.5227,0.8898,0.3864,0.4909,0.8686,0.4091,0.5909,0.8941,0.2455,0.7545,knn_k4/knn_k6,njc
+3,0.9364,0.4698,0.5129,0.9619,0.3319,0.6681,0.9619,0.3319,0.6638,0.9661,0.3405,0.5776,0.9619,0.4181,0.4052,0.8602,0.3491,0.6509,0.9364,0.2457,0.7371,rf_k4,njc

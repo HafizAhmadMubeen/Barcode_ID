@@ -17,3 +17,6 @@ B_known_correct,rf_k6,0.8705,0.7705,0.9641,193,37
 A_correct,bcm,0.8559,0.7233,0.98,236,45
 B_unknown_named,bcm,0.1583,0.0,0.4921,139,8
 B_known_correct,bcm,0.8187,0.6611,0.9705,193,37
+A_correct,njc,0.9237,0.8592,0.9821,236,45
+B_unknown_named,njc,0.0,0.0,0.0,139,8
+B_known_correct,njc,0.8497,0.7831,0.9059,193,37

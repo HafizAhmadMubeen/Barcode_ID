@@ -51,6 +51,9 @@ def main():
           f"{(queries.set == 'test_unknown').sum()} unknown\n")
 
     nj, _, _ = run_nj(train, queries, TREE_B, [SPLIT_B, HELDOUT])
+    pd.DataFrame([{"accept_rate": r, "tree_distance_max": round(c, 5)}
+                  for r, c in nj.attrs["cutoffs"].items()]).to_csv(
+        TABLES_DIR / "nj_thresholds_B.csv", index=False)
     ml, thresholds, _ = run_ml(list(train.seq_id), train.species, list(queries.seq_id),
                                MODELS_DIR / "condition_B")
     # Leakage check on the fitted models: no held-out species among their classes.
@@ -87,6 +90,10 @@ def main():
     bcm_genus = unk.bcm_predicted_species.str.split().str[0] == unk.true_genus
     print(f"  {'bcm (Meier cut)':16s} {bcm_named.mean():15.1%} {(~bcm_named).mean():9.1%} "
           f"{(bcm_named & bcm_genus).mean():13.1%}")
+    njc_named = ~unk.njc_flagged_unknown & (unk.nj_predicted_species != AMBIGUOUS)
+    njc_genus = unk.nj_predicted_species.str.split().str[0] == unk.true_genus
+    print(f"  {'nj + cut-off':16s} {njc_named.mean():15.1%} {(~njc_named).mean():9.1%} "
+          f"{(njc_named & njc_genus).mean():13.1%}")
 
     print(f"\nKNOWN queries ({len(kno)})")
     print(f"  {'method':8s} {'correct species':>15s} {'abstains':>9s}")

@@ -7,7 +7,7 @@ species are not independent (in Condition B, 139 unknown queries come from only
 8 species), so we resample SPECIES with replacement and keep all their queries.
 2000 resamples, SEED 42, 95% percentile intervals.
 
-Significance tests: exact McNemar test on the same queries for 9 method pairs
+Significance tests: exact McNemar test on the same queries for 13 method pairs
 (NJ vs each ML variant, k-NN vs RF at k=4 and k=6, best close match vs NJ, k-NN
 and RF at k=6), Holm-corrected within each
 outcome. McNemar treats queries as independent, which overstates certainty, so
@@ -35,11 +35,13 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from config import SEED, TABLES_DIR, UNKNOWN_ACCEPT_RATE  # noqa: E402
 
-METHODS = ["nj", "knn_k4", "knn_k6", "rf_k4", "rf_k6", "bcm"]
+METHODS = ["nj", "knn_k4", "knn_k6", "rf_k4", "rf_k6", "bcm", "njc"]
 PAIRS = [("nj", "knn_k4"), ("nj", "knn_k6"), ("nj", "rf_k4"), ("nj", "rf_k6"),
          ("knn_k4", "rf_k4"), ("knn_k6", "rf_k6"),
          # Best close match (improvement #2): is ML better than a plain distance rule?
-         ("bcm", "nj"), ("bcm", "knn_k6"), ("bcm", "rf_k6")]
+         ("bcm", "nj"), ("bcm", "knn_k6"), ("bcm", "rf_k6"),
+         # NJ tree + cut-off (decided 2026-10-13): does a fair cut-off close the gap?
+         ("njc", "nj"), ("njc", "knn_k6"), ("njc", "rf_k6"), ("njc", "bcm")]
 N_BOOT = 2000
 RATE = round(UNKNOWN_ACCEPT_RATE * 100)
 
@@ -57,6 +59,10 @@ def outcome_columns(a, b):
             a_ans = a.bcm_predicted_species
             u_named = ~unk.bcm_flagged_unknown & (unk.bcm_predicted_species != "ambiguous")
             k_ans = kno.bcm_predicted_species.where(~kno.bcm_flagged_unknown, "unknown")
+        elif m == "njc":                           # NJ answers + tree-distance cut-off
+            a_ans = a.nj_predicted_species         # Condition A without cut-off, like ML
+            u_named = ~unk.njc_flagged_unknown & (unk.nj_predicted_species != "ambiguous")
+            k_ans = kno.nj_predicted_species.where(~kno.njc_flagged_unknown, "unknown")
         else:
             a_ans = a[f"{m}_predicted_species"]
             u_named = ~unk[f"{m}_flagged_at_{RATE}"]

@@ -152,6 +152,9 @@ def build(d):
     speed = run_ms["nj"] / run_ms["knn_k6"]
     b_nj, b_knn = sb.loc[("nj", "rule")], sb.loc[("knn_k6", "accept 95%")]
     b_bcm95 = sb.loc[("bcm", "accept 95%")]
+    b_njc = sb.loc[("njc", "accept 95%")]                     # NJ tree + cut-off (2026-10-13)
+    loso_njc = L("all", "njc", "false_assignment_rate_mean")
+    clean_njc = L("excluding barcode-sharing", "njc", "false_assignment_rate_mean")
     sig_A = sig[(sig.outcome == "A_correct") & (sig.method_1 == "nj")]
     n_sharing = len(d["barcode_sharing_species"])
 
@@ -235,8 +238,8 @@ def build(d):
     deck.title(s, "Four methods, the same queries")
     methods = [
         ("NJ", "Neighbor-Joining tree", "Build a tree of reference + query barcodes. Answer = the "
-         "species in the smallest clade around the query.", "Unknown? Only 'ambiguous' if that "
-         "clade has several species"),
+         "species in the smallest clade around the query.", "Unknown? Plain: only 'ambiguous'. "
+         "+ cut-off: if far from all references on the tree"),
         ("kNN", "k-nearest neighbours", "Compare k-mer profiles; the 5 most similar reference "
          "barcodes vote.", "Unknown? If the nearest reference is too far away"),
         ("RF", "Random forest", "500 decision trees learn which k-mer patterns point to which "
@@ -251,8 +254,8 @@ def build(d):
         deck.text(s, name, x + 0.25, 2.9, 2.4, 0.8, 19, bold=True, color=POND)
         deck.text(s, how, x + 0.25, 3.7, 2.4, 1.6, 15)
         deck.text(s, unk, x + 0.25, 5.35, 2.4, 1.0, 14, italic=True, color=AMBER_TEXT)
-    deck.text(s, "k-NN and RF use k-mer frequencies (k = 4 and k = 6); 'unknown' thresholds are "
-              "calibrated on training data only, accepting 95% of known species.",
+    deck.text(s, "k-NN and RF use k-mers (k = 4, 6). Every 'unknown' cut-off, the tree's included, "
+              "accepts 95% of known species (training data only).",
               0.6, 6.7, 12.1, 0.5, 13, color=MUTED)
 
     # 5 ---------------------------------------------------------- design --
@@ -305,38 +308,40 @@ def build(d):
     # 7 -------------------------------------------------- result: unknown --
     s = deck.slide(notes=(
         f"Now the species is missing from the database. Read the colours: green is safe, yellow "
-        f"a wrong species in the right genus, red a wrong genus. The NJ tree named a wrong "
+        f"a wrong species in the right genus, red a wrong genus. The plain NJ tree named a wrong "
         f"species for {pct(b_nj.unknown_false_assignment_rate, 0)} of unknown queries. Without a "
         f"threshold the classifiers always name a known species, and random forest even picks "
-        f"the wrong genus. With the calibrated threshold, k-NN flagged every unknown query and "
-        f"still gave the correct genus."))
+        f"the wrong genus. With a calibrated cut-off, k-NN flagged every unknown query and still "
+        f"gave the correct genus, and so did the same NJ tree once it got a cut-off: the bottom "
+        f"row."))
     deck.title(s, "Unknown species: the methods split apart")
-    deck.picture(s, "condition_B_outcomes.png", 0.4, 1.35, h=5.85)
-    deck.stat(s, pct(b_nj.unknown_false_assignment_rate, 0), "NJ tree: unknown species\ngiven a wrong name",
-              9.1, 1.6, 3.8, color=DANGER, size=50)
-    deck.stat(s, pct(b_knn.unknown_false_assignment_rate, 0), "k-NN with its threshold:\nall flagged 'unknown'",
-              9.1, 3.55, 3.8, color=SAFE, size=50)
-    deck.text(s, "Main run: 8 held-out species, 139 unknown queries", 9.1, 5.6, 3.8, 0.6, 13,
+    deck.picture(s, "condition_B_outcomes.png", 0.4, 1.3, h=6.0)
+    deck.stat(s, pct(b_nj.unknown_false_assignment_rate, 0), "plain NJ tree: unknown species\ngiven a wrong name",
+              9.1, 1.5, 3.8, color=DANGER, size=48)
+    deck.stat(s, pct(b_knn.unknown_false_assignment_rate, 0),
+              "k-NN with its cut-off\nand NJ tree + cut-off", 9.1, 3.35, 3.8, color=SAFE, size=48)
+    deck.text(s, "Main run: 8 held-out species, 139 unknown queries", 9.1, 5.5, 3.8, 0.6, 13,
               color=MUTED, italic=True)
 
     # 8 ------------------------------------------------------- every species --
     s = deck.slide(notes=(
         f"Is that just a lucky choice of 8 species? We removed every one of the {n_loso} "
-        f"eligible species on its own. Averaged over species, the tree wrongly named the missing "
-        f"species {pct(loso_nj, 0)} of the time, k-NN {pct(loso_knn, 0)}. For the {n_clean} "
-        f"species that do not share their barcode, k-NN never named a wrong species, not for a "
-        f"single query, and still gave the correct genus {pct(clean_genus, 0)} of the time. The "
-        f"tree even put two species into the wrong genus."))
+        f"eligible species on its own. Averaged over species, the plain tree wrongly named the "
+        f"missing species {pct(loso_nj, 0)} of the time. With a cut-off, the same tree wrongly "
+        f"named {pct(loso_njc, 0)} and k-NN {pct(loso_knn, 0)}. For the {n_clean} species that "
+        f"do not share their barcode, both never named a wrong species. The plain tree even put "
+        f"two species into the wrong genus."))
     deck.title(s, "Every species held out once")
-    deck.card(s, 0.6, 1.55, 6.2, 2.45)
-    deck.text(s, f"All {n_loso} species", 0.95, 1.75, 5.5, 0.5, 18, bold=True, color=POND)
-    deck.stat(s, pct(loso_nj, 0), "NJ tree wrongly named", 0.95, 2.2, 2.6, color=DANGER, size=48)
-    deck.stat(s, pct(loso_knn, 0), "k-NN wrongly named", 3.75, 2.2, 2.6, color=SAFE, size=48)
-    deck.card(s, 0.6, 4.25, 6.2, 2.45, RGBColor(0xFB, 0xF1, 0xDC))
-    deck.text(s, f"{n_clean} species without barcode sharing", 0.95, 4.45, 5.6, 0.5, 18, bold=True, color=POND)
-    deck.stat(s, pct(clean_nj, 0), "NJ tree wrongly named", 0.95, 4.9, 2.6, color=DANGER, size=48)
-    deck.stat(s, pct(clean_knn, 0), f"k-NN wrongly named\n(correct genus {pct(clean_genus, 0)})",
-              3.75, 4.9, 2.6, color=SAFE, size=48)
+    deck.card(s, 0.6, 1.55, 6.6, 2.45)
+    deck.text(s, f"All {n_loso} species: wrongly named", 0.9, 1.75, 6.0, 0.5, 18, bold=True, color=POND)
+    for j, (val, lab, col) in enumerate([(loso_nj, "plain NJ tree", DANGER), (loso_njc, "NJ + cut-off", SAFE),
+                                         (loso_knn, "k-NN", SAFE)]):
+        deck.stat(s, pct(val, 0), lab, 0.9 + j * 2.1, 2.25, 1.9, color=col, size=40)
+    deck.card(s, 0.6, 4.25, 6.6, 2.45, RGBColor(0xFB, 0xF1, 0xDC))
+    deck.text(s, f"{n_clean} species without barcode sharing", 0.9, 4.45, 6.0, 0.5, 18, bold=True, color=POND)
+    for j, (val, lab, col) in enumerate([(clean_nj, "plain NJ tree", DANGER), (clean_njc, "NJ + cut-off", SAFE),
+                                         (clean_knn, "k-NN", SAFE)]):
+        deck.stat(s, pct(val, 0), lab, 0.9 + j * 2.1, 4.95, 1.9, color=col, size=40)
     deck.picture(s, "loso_per_species.png", 7.75, 1.4, h=5.75)
 
     # 9 --------------------------------------------------------- sharing --
@@ -360,32 +365,58 @@ def build(d):
                     f"NJ up to {pct(only[only.method == 'nj'].unknown_false_assignment_rate.max(), 0)}).", {})]],
               8.9, 1.8, 4.0, 4.8, 17)
 
-    # 10 ------------------------------------------------- where safety from --
+    # 10 ---------------------------------------------- fair test for the tree --
     s = deck.slide(notes=(
-        f"Is it machine learning that makes k-NN safe? We tested the classic best-close-match "
-        f"rule with the same kind of cut-off: it also flagged "
-        f"{pct(b_bcm95.unknown_flagged_rate, 0)} of unknown species. So the safety comes from "
-        f"having a calibrated distance cut-off. What k-NN adds is that it loses fewer known "
-        f"species at the same safety: {pct(b_knn.known_accuracy, 0)} correct versus "
-        f"{pct(b_bcm95.known_accuracy, 0)}."))
-    deck.title(s, "Where does the safety come from?")
-    cols = [("Best close match", "same cut-off as k-NN", pct(b_bcm95.unknown_flagged_rate, 0),
-             pct(b_bcm95.known_accuracy, 0)),
-            ("k-NN", "calibrated cut-off", pct(b_knn.unknown_flagged_rate, 0), pct(b_knn.known_accuracy, 0))]
-    for i, (name, sub, unk, kno) in enumerate(cols):
-        x = 0.6 + i * 4.3
-        deck.card(s, x, 1.6, 3.9, 4.6, POND_LIGHT if i == 0 else RGBColor(0xFB, 0xF1, 0xDC))
-        deck.text(s, name, x + 0.35, 1.85, 3.3, 0.5, 22, bold=True, color=POND)
-        deck.text(s, sub, x + 0.35, 2.4, 3.3, 0.4, 14, italic=True, color=MUTED)
-        deck.stat(s, unk, "unknown species flagged", x + 0.35, 2.95, 3.3, color=SAFE, size=46)
-        deck.stat(s, kno, "known species still correct", x + 0.35, 4.55, 3.3, color=POND, size=46)
-    deck.text(s, [[("The safety comes from the cut-off, ", {"bold": True, "color": POND}),
-                   ("not from machine learning itself.", {})],
+        f"A fair question: the classifiers had an 'unknown' cut-off, the tree did not. So we gave "
+        f"the same tree one: if a query is far, along the tree, from every reference sequence, "
+        f"it says 'unknown'. The cut-off is calibrated on training sequences only, like the "
+        f"others. Result: the tree became as safe as k-NN. Across all {n_loso} species it wrongly "
+        f"named {pct(loso_njc, 0)}, k-NN {pct(loso_knn, 0)}, plain tree {pct(loso_nj, 0)}. The "
+        f"curves show every possible cut-off: the pink tree curve and the orange k-NN curve "
+        f"almost overlap."))
+    deck.title(s, "A fair test: give the tree a cut-off")
+    deck.picture(s, "threshold_curve.png", 0.5, 1.45, w=7.4)
+    deck.stat(s, f"{pct(loso_nj, 0)} → {pct(loso_njc, 0)}", "missing species wrongly named:\nplain tree → tree + cut-off",
+              8.4, 1.6, 4.6, color=SAFE, size=44)
+    deck.text(s, [[("k-NN: ", {"bold": True, "color": POND}),
+                   (f"{pct(loso_knn, 0)} with its cut-off ({n_loso} species).", {})],
+                  [("Same balance: ", {"bold": True, "color": POND}),
+                   ("the curves of the tree + cut-off and k-NN almost overlap.", {})],
+                  [("The cut-off ", {"bold": True, "color": POND}),
+                   ("is calibrated on training sequences only, inside the same tree.", {})]],
+              8.4, 3.55, 4.5, 3.0, 16)
+
+    # 11 ------------------------------------------------- where safety from --
+    s = deck.slide(notes=(
+        f"Three independent results say the same thing. A plain distance rule, best close match, "
+        f"becomes just as safe when calibrated like k-NN. The tree becomes just as safe with a "
+        f"cut-off. And the threshold curves overlap. So safety comes from the calibrated cut-off, "
+        f"not from machine learning. What machine learning adds: speed, and slightly fewer losses "
+        f"on known species at its calibration ({pct(b_knn.known_accuracy, 0)} correct versus "
+        f"{pct(b_njc.known_accuracy, 0)} for the tree + cut-off and "
+        f"{pct(b_bcm95.known_accuracy, 0)} for best close match, Condition B main run)."))
+    deck.title(s, "So where does the safety come from?")
+    evidence = [("1", "Plain distance rule", f"Best close match, calibrated like k-NN: "
+                 f"{pct(b_bcm95.unknown_flagged_rate, 0)} of unknown species flagged."),
+                ("2", "The same tree + cut-off", f"Wrong names fall from {pct(loso_nj, 0)} to "
+                 f"{pct(loso_njc, 0)} across {n_loso} species."),
+                ("3", "Overlapping curves", "At equal false alarms, tree + cut-off and k-NN catch "
+                 "the same unknowns.")]
+    for i, (num, head, body) in enumerate(evidence):
+        y = 1.55 + i * 1.6
+        deck.card(s, 0.6, y, 7.6, 1.4)
+        deck.badge(s, num, 0.9, y + 0.38)
+        deck.text(s, head, 1.8, y + 0.22, 6.2, 0.5, 19, bold=True, color=POND)
+        deck.text(s, body, 1.8, y + 0.72, 6.2, 0.6, 15)
+    deck.card(s, 8.6, 1.55, 4.15, 3.0, RGBColor(0xFB, 0xF1, 0xDC))
+    deck.text(s, [[("The cut-off makes it safe, ", {"bold": True, "color": POND}),
+                   ("not machine learning.", {})],
                   [("What k-NN adds: ", {"bold": True, "color": POND}),
-                   ("far fewer losses on known species: its vote among five neighbours resolves "
-                    "near-ties that the plain distance rule calls 'ambiguous'.", {})],
-                  [("Condition B, main run.", {"italic": True, "color": MUTED, "size": 13})]],
-              9.4, 1.9, 3.5, 4.4, 17)
+                   (f"~{speed:.0f}× speed, and slightly more known species correct "
+                    f"({pct(b_knn.known_accuracy, 0)} vs {pct(b_njc.known_accuracy, 0)} for the "
+                    f"tree + cut-off).", {})],
+                  [("Condition B main run and all 39 species.", {"italic": True, "color": MUTED, "size": 13})]],
+              8.9, 1.85, 3.6, 2.6, 17)
 
     # 11 ----------------------------------------------------------- speed --
     s = deck.slide(notes=(
@@ -404,14 +435,14 @@ def build(d):
     # 12 ----------------------------------------------------- limitations --
     s = deck.slide(notes=(
         "Be honest about the limits. One group, one gene, one region. A small dataset. Barcode "
-        "sharing that no barcode-only method can solve. And the comparison is not perfectly "
-        "like-for-like: we gave the tree no extra 'unknown' threshold, on purpose, to test the "
-        "method as usually applied. A distance threshold on the tree could make it safer."))
+        "sharing that no barcode-only method can solve. And the tree's cut-off was calibrated "
+        "inside the tree, while the classifiers used cross-validation, so the two cut-offs sit "
+        "at slightly different points of the trade-off."))
     deck.title(s, "Limitations")
     lims = [("1", "One group, one gene", "Two European Odonata families, COI only, BOLD data of 9 Oct 2026."),
             ("2", "Small dataset", f"{len(meta)} sequences of {meta.species.nunique()} species; some species have only 3."),
             ("3", "Barcode sharing", f"{n_sharing} species can't be separated by any barcode-only method."),
-            ("4", "Tree not fully like-for-like", "NJ had no extra 'unknown' threshold; one tree for all queries.")]
+            ("4", "Different calibrations", "Tree cut-off calibrated inside the tree, ML by cross-validation; one tree for all queries.")]
     for i, (num, head, body) in enumerate(lims):
         x = 0.6 + (i % 2) * 6.25
         y = 1.7 + (i // 2) * 2.4
@@ -422,21 +453,19 @@ def build(d):
 
     # 13 ------------------------------------------------------ conclusion --
     s = deck.slide(dark=True, notes=(
-        "Our one-sentence answer, and the practical advice: for identification, use a "
-        "distance-aware method with a calibrated 'unknown' threshold, such as k-NN, rather than "
-        "reading a species name off a tree; report barcode-sharing groups at genus level. Then "
-        "invite questions."))
+        "Our one-sentence answer: it is the calibrated 'unknown' cut-off that makes "
+        "identification safe, not the choice between a tree and machine learning. The practical "
+        "advice: whatever method you use, give it a calibrated cut-off; k-NN is the fast way to "
+        "do it; report barcode-sharing groups at genus level. Then invite questions."))
     deck.text(s, "Conclusion", 0.9, 0.7, 11, 0.9, 34, bold=True, font=HEAD, color=AMBER)
-    deck.text(s, [[("Machine learning matched the tree on known species ", {}),
-                   (f"({pct(acc['knn_k6'], 0)} vs {pct(acc['nj'], 0)}) ", {"bold": True}),
-                   ("but wrongly named unknown species over four times less often ", {}),
-                   (f"({pct(loso_knn, 0)} vs {pct(loso_nj, 0)}, {n_loso} species) ", {"bold": True}),
-                   ("and was ", {}), (f"~{speed:.0f}× faster.", {"bold": True})]],
-              0.9, 1.75, 11.5, 2.0, 28, font=HEAD, color=WHITE)
-    deck.text(s, ["Use a distance-aware method with a calibrated 'unknown' threshold, not a "
-                  "species name read off a tree.",
+    deck.text(s, [[("The calibrated 'unknown' cut-off, not the method, makes identification safe. ", {"bold": True}),
+                   (f"Without one, the tree wrongly named {pct(loso_nj, 0)} of missing species; with one, "
+                    f"the tree and k-NN wrongly named {pct(loso_njc, 0)} and {pct(loso_knn, 0)} "
+                    f"({n_loso} species), and k-NN was ~{speed:.0f}× faster.", {})]],
+              0.9, 1.7, 11.5, 2.4, 26, font=HEAD, color=WHITE)
+    deck.text(s, ["Whatever method you use, give it a calibrated 'unknown' cut-off; k-NN is the fast way.",
                   "Report barcode-sharing groups at genus level: no barcode-only method separates them."],
-              0.9, 4.3, 11.5, 1.6, 18, color=WHITE)
+              0.9, 4.45, 11.5, 1.5, 18, color=WHITE)
     deck.text(s, "Questions?", 0.9, 6.2, 6, 0.6, 22, bold=True, font=HEAD, color=AMBER)
 
     deck.save()

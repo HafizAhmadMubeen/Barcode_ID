@@ -47,16 +47,19 @@ from config import (  # noqa: E402
 )
 
 ML = ["knn_k4", "knn_k6", "rf_k4", "rf_k6"]
-METHODS = ["nj"] + ML + ["bcm"]
+METHODS = ["nj"] + ML + ["bcm", "njc"]          # njc = NJ tree + cut-off (decided 2026-10-13)
 LABEL = {"nj": "NJ tree", "knn_k4": "k-NN (k=4)", "knn_k6": "k-NN (k=6)",
-         "rf_k4": "RF (k=4)", "rf_k6": "RF (k=6)", "bcm": "Best close match"}
+         "rf_k4": "RF (k=4)", "rf_k6": "RF (k=6)", "bcm": "Best close match",
+         "njc": "NJ tree + cut-off"}
 MAIN_RATE = round(UNKNOWN_ACCEPT_RATE * 100)
 
 # Colours: one per method family (validated palette slots 1-3 + violet, checked
 # all-pairs with the dataviz validator), status colours for outcomes
 # (safe / close / dangerous, always with a text label).
-FAMILY_COLOR = {"nj": "#2a78d6", "knn": "#eb6834", "rf": "#1baf7a", "bcm": "#4a3aa7"}
-MAIN_SETTING = {"nj": "rule", "bcm": "Meier cut-off"}   # ML main setting: "accept 95%"
+# "njc" sits last so its magenta neighbours violet, not orange (validator: all checks pass).
+FAMILY_COLOR = {"nj": "#2a78d6", "knn": "#eb6834", "rf": "#1baf7a", "bcm": "#4a3aa7", "njc": "#e87ba4"}
+MAIN_SETTING = {"nj": "rule", "bcm": "Meier cut-off"}   # ML and njc main setting: "accept 95%"
+CUTOFF_METHODS = ML + ["bcm", "njc"]                     # methods with an 'unknown' cut-off
 OUTCOME_COLOR = {"abstained_genus": "#0ca30c", "abstained_other": "#8fd18f",
                  "near_relative": "#fab219", "other_genus": "#d03b3b"}
 OUTCOME_LABEL = {"abstained_genus": "Flagged unknown + correct genus (safe, informative)",
@@ -179,7 +182,8 @@ def summarize_A(a, runtime):
             "accuracy_with_unknown_flag": (ans == a.true_species).mean(),
             "abstain_rate": ans.isin(["unknown", "ambiguous"]).mean(),
             "macro_precision": p.mean(), "macro_recall": r.mean(),
-            "runtime_ms_per_query": runtime.get(m, np.nan),
+            # NJ + cut-off runs the same pipeline as NJ (the extra distance step is negligible).
+            "runtime_ms_per_query": runtime.get("nj" if m == "njc" else m, np.nan),
         })
     return pd.DataFrame(rows).round(4), pd.DataFrame(per_species)
 
@@ -189,7 +193,7 @@ def summarize_B(b):
     rates = [round(x * 100) for x in SENSITIVITY_ACCEPT_RATES]
     settings = ([("nj", None, "rule")]
                 + [(m, None, "no threshold") for m in ML + ["bcm"]]
-                + [(m, rate, f"accept {rate}%") for m in ML + ["bcm"] for rate in rates]
+                + [(m, rate, f"accept {rate}%") for m in CUTOFF_METHODS for rate in rates]
                 + [("bcm", "main", "Meier cut-off"), ("bcm", "fixed_2", "fixed 2%")])
     rows = []
     for m, rate, setting in settings:
@@ -252,17 +256,19 @@ def save(fig, name):
 def fig_accuracy(summary_A, reps):
     fig, ax = plt.subplots(figsize=(7, 4))
     style(ax, "Condition A: correct species on known queries", ylabel="Accuracy (%)")
-    x = np.arange(len(METHODS))
-    acc = [100 * summary_A.set_index("method").accuracy[m] for m in METHODS]
-    ax.bar(x, acc, width=0.6, color=[FAMILY_COLOR[family(m)] for m in METHODS],
+    # Without any cut-off, NJ + cut-off gives exactly the NJ answers, so no own bar.
+    methods = [m for m in METHODS if m != "njc"]
+    x = np.arange(len(methods))
+    acc = [100 * summary_A.set_index("method").accuracy[m] for m in methods]
+    ax.bar(x, acc, width=0.6, color=[FAMILY_COLOR[family(m)] for m in methods],
            edgecolor=SURFACE, linewidth=2)
-    for i, m in enumerate(METHODS):
+    for i, m in enumerate(methods):
         seeds = [100 * r[f"A_acc_{m}"] for r in reps if r["seed"] != SEED]
         ax.scatter([i] * len(seeds), seeds, s=36, color=INK, edgecolor=SURFACE, linewidth=1.5,
                    zorder=3, label="Replicate seeds" if i == 0 else None)
         # Value at the foot of the bar, clear of the replicate dots.
         ax.text(i, 80.6, f"{acc[i]:.1f}%", ha="center", va="bottom", color=INK, fontsize=9)
-    ax.set_xticks(x, [LABEL[m] for m in METHODS])
+    ax.set_xticks(x, [LABEL[m] for m in methods])
     ax.set_ylim(80, 100)
     ax.yaxis.grid(True, color=GRID, linewidth=0.8)
     ax.legend(frameon=False, loc="upper right", fontsize=9)
@@ -273,7 +279,8 @@ def fig_accuracy(summary_A, reps):
 
 def fig_runtime(summary_A):
     s = summary_A.set_index("method").runtime_ms_per_query
-    methods = [m for m in METHODS if not np.isnan(s[m])]     # only methods that were timed
+    # Only methods that were timed; NJ + cut-off is the NJ pipeline, so it has no own bar.
+    methods = [m for m in METHODS if m != "njc" and not np.isnan(s[m])]
     if not methods:
         return
     fig, ax = plt.subplots(figsize=(7, 0.6 * len(methods) + 0.8))
@@ -299,9 +306,10 @@ def fig_outcomes(summary_B):
             + [(m, "no threshold", f"{LABEL[m]}, no threshold") for m in ML]
             + [("bcm", "no threshold", "Best close match, no cut-off")]
             + [(m, f"accept {MAIN_RATE}%", f"{LABEL[m]}, threshold") for m in ML]
-            + [("bcm", "Meier cut-off", "Best close match, Meier cut-off")])
+            + [("bcm", "Meier cut-off", "Best close match, Meier cut-off")]
+            + [("njc", f"accept {MAIN_RATE}%", "NJ tree + cut-off")])
     s = summary_B.set_index(["method", "setting"])
-    fig, ax = plt.subplots(figsize=(8, 5.6))
+    fig, ax = plt.subplots(figsize=(8, 6.0))
     style(ax, "Condition B: answers for species NOT in the database",
           xlabel="Share of unknown queries (%)")
     y = np.arange(len(rows))[::-1]
@@ -352,8 +360,8 @@ def fig_A_vs_B(summary_A, summary_B):
     ax.set_xlim(-0.15, 1.9)
     ax.set_ylim(0, 105)
     ax.yaxis.grid(True, color=GRID, linewidth=0.8)
-    fig.text(0.01, 0.01, "ML with its calibrated threshold (accept 95% of knowns); NJ with its rule; "
-             "best close match with Meier's cut-off.", fontsize=8, color=INK_2)
+    fig.text(0.01, 0.01, "ML and NJ + cut-off: calibrated cut-off (accept 95% of knowns); plain NJ: "
+             "its rule only; best close match: Meier's cut-off.", fontsize=8, color=INK_2)
     save(fig, "A_vs_B.png")
 
 
@@ -363,14 +371,18 @@ def fig_threshold_curve(b, summary_B):
     style(ax, "Threshold sensitivity (Condition B)",
           xlabel="Known queries wrongly flagged unknown (%)",
           ylabel="Unknown queries caught (%)")
-    for m in ML + ["bcm"]:
-        # Confidence: higher = more sure. For BCM it is minus the nearest distance.
-        conf = (lambda d: -d["bcm_nearest_distance"]) if m == "bcm" else (lambda d: d[f"{m}_confidence"])
+    for m in CUTOFF_METHODS:
+        # Confidence: higher = more sure. For BCM and NJ + cut-off it is minus the
+        # nearest distance (K2P for BCM, along the tree for NJ).
+        if m in ("bcm", "njc"):
+            conf = lambda d, m=m: -d[f"{m}_nearest_distance"]  # noqa: E731
+        else:
+            conf = lambda d, m=m: d[f"{m}_confidence"]  # noqa: E731
         cu, ck = conf(unk).to_numpy(), conf(kno).to_numpy()
         cuts = np.unique(np.concatenate([cu, ck, [np.inf]]))
         xs = [100 * (ck < c).mean() for c in cuts]
         ys = [100 * (cu < c).mean() for c in cuts]
-        marker = {"bcm": "^"}.get(m, "o" if m.endswith("k4") else "s")
+        marker = {"bcm": "^", "njc": "D"}.get(m, "o" if m.endswith("k4") else "s")
         ax.plot(xs, ys, color=FAMILY_COLOR[family(m)], linewidth=2, label=LABEL[m],
                 linestyle=(0, (4, 2)) if m.endswith("k4") else "-")
         # Markers: the calibrated cut-offs (90/95/99%), read from the flag columns.
@@ -410,7 +422,8 @@ def fig_sharing(split):
             seeds = 100 * g[g.method == m].unknown_false_assignment_rate.to_numpy()
             ax.scatter([xi] * len(seeds), seeds, s=22, color=INK, edgecolor=SURFACE,
                        linewidth=1.2, zorder=3)
-    ax.set_xticks(x, [LABEL[m].replace(" (", "\n(") for m in METHODS])
+    wrapped = {"bcm": "Best close\nmatch", "njc": "NJ tree\n+ cut-off"}
+    ax.set_xticks(x, [wrapped.get(m, LABEL[m].replace(" (", "\n(")) for m in METHODS])
     ax.set_ylim(0, 102)
     ax.yaxis.grid(True, color=GRID, linewidth=0.8)
     ax.legend(frameon=False, loc="upper right", fontsize=8)
@@ -427,7 +440,7 @@ def fig_loso():
         print("loso_per_species.csv missing: run src/leave_one_species_out.py (figure skipped)")
         return
     p = pd.read_csv(path)
-    shown = ["nj", "knn_k6", "rf_k6", "bcm"]
+    shown = ["nj", "njc", "knn_k6", "rf_k6", "bcm"]
     w = p.pivot(index="species", columns="method", values="false_assignment_rate")
     sharing = p.groupby("species").barcode_sharing.first()
     # Barcode-sharing species at the bottom; within each group, sort by NJ then name.
@@ -438,8 +451,8 @@ def fig_loso():
     y = np.arange(len(order))[::-1]
     n_clean = int((~sharing[order]).sum())
     ax.axhspan(-0.5, len(order) - n_clean - 0.5, color="#f0efec", zorder=0)   # barcode-sharing band
-    offsets = {"nj": 0.24, "knn_k6": 0.08, "rf_k6": -0.08, "bcm": -0.24}
-    markers = {"nj": "D", "knn_k6": "o", "rf_k6": "s", "bcm": "^"}
+    offsets = {"nj": 0.28, "njc": 0.14, "knn_k6": 0.0, "rf_k6": -0.14, "bcm": -0.28}
+    markers = {"nj": "D", "njc": "d", "knn_k6": "o", "rf_k6": "s", "bcm": "^"}
     for m in shown:
         ax.scatter(100 * w.loc[order, m], y + offsets[m], s=34, marker=markers[m],
                    color=FAMILY_COLOR[family(m)], edgecolor=SURFACE, linewidth=1.2, zorder=3,
@@ -449,7 +462,7 @@ def fig_loso():
     ax.set_ylim(-0.7, len(order) - 0.3)
     ax.set_xlim(-3, 103)
     ax.xaxis.grid(True, color=GRID, linewidth=0.8)
-    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.4, -0.05), ncol=4, fontsize=8)
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.4, -0.05), ncol=3, fontsize=8)
     fig.text(0.01, 0.01, "* shaded rows: barcode-sharing species (share a BOLD BIN with another "
              "species). Main cut-off for each method.", fontsize=7.5, color=INK_2)
     save(fig, "loso_per_species.png")

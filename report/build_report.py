@@ -29,7 +29,8 @@ OUT = ROOT / "report" / "BarcodeID_report.docx"
 ACCENT = RGBColor(0x1C, 0x5C, 0xAB)
 MUTED = RGBColor(0x52, 0x51, 0x4E)
 NAMES = {"nj": "NJ tree", "knn_k4": "k-NN (k=4)", "knn_k6": "k-NN (k=6)",
-         "rf_k4": "RF (k=4)", "rf_k6": "RF (k=6)", "bcm": "Best close match"}
+         "rf_k4": "RF (k=4)", "rf_k6": "RF (k=6)", "bcm": "Best close match",
+         "njc": "NJ tree + cut-off"}
 
 
 # ------------------------------------------------------------------ data --
@@ -39,7 +40,7 @@ def load():
         "cleaning_log", "summary_A", "summary_B", "confidence_intervals", "significance_tests",
         "replicates_summary", "sharing_split", "loso_overall", "loso_per_species", "runtime",
         "ml_thresholds", "ml_thresholds_B", "bcm_thresholds", "bcm_thresholds_B",
-        "barcode_sharing_species", "removed_outliers", "removed_misids"]}
+        "barcode_sharing_species", "removed_outliers", "removed_misids", "nj_thresholds"]}
     d["meta"] = pd.read_csv(PROCESSED_DIR / "metadata.csv")
     d["split_A"] = pd.read_csv(PROCESSED_DIR / "split_A.csv")
     d["split_B"] = pd.read_csv(PROCESSED_DIR / "split_B.csv")
@@ -185,7 +186,8 @@ def build(d):
     n_unk = (split_B.set == "test_unknown").sum()
     n_kno = (split_B.set == "test_known").sum()
     acc = {m: sA.accuracy[m] for m in NAMES}
-    main = {"nj": "rule", "bcm": "Meier cut-off", **{m: "accept 95%" for m in ["knn_k4", "knn_k6", "rf_k4", "rf_k6"]}}
+    main = {"nj": "rule", "bcm": "Meier cut-off",
+            **{m: "accept 95%" for m in ["knn_k4", "knn_k6", "rf_k4", "rf_k6", "njc"]}}
     b_main = {m: sb.loc[(m, main[m])] for m in NAMES}
     nj_ms, knn_ms, rf_ms, bcm_ms = run_ms["nj"], run_ms["knn_k6"], run_ms["rf_k6"], run_ms["bcm"]
     # Headline speed-up: NJ vs k-NN (k=6), the method the headline is about.
@@ -203,6 +205,24 @@ def build(d):
     sig_B = sig[sig.outcome == "B_unknown_named"]
     nj_vs_ml_B = sig_B[(sig_B.method_1 == "nj") & sig_B.method_2.str.startswith(("knn", "rf"))]
     wrong_genus_nj = lps[(lps.method == "nj") & (lps.other_genus_rate > 0)]
+    # NJ tree + cut-off (njc), added 2026-10-13
+    loso_njc = L("all", "njc", "false_assignment_rate_mean")
+    clean_njc = L("excluding barcode-sharing", "njc", "false_assignment_rate_mean")
+    clean_knn = L("excluding barcode-sharing", "knn_k6", "false_assignment_rate_mean")
+    share_njc = L("barcode-sharing only", "njc", "false_assignment_rate_mean")
+    share_knn = L("barcode-sharing only", "knn_k6", "false_assignment_rate_mean")
+    loso_cut = [L("all", m, "false_assignment_rate_mean") for m in ["njc", "knn_k6"]]
+    njt = d["nj_thresholds"].set_index("accept_rate").tree_distance_max
+    # Known species still correct WITH cut-offs, every seed and condition (NJ + cut-off vs k-NN k=6)
+    known_gap = []
+    for seed_dir in [TABLES_DIR] + [RESULTS_DIR / "replicates" / f"seed_{s}" for s in (1, 2, 3)]:
+        a_s, b_s = pd.read_csv(seed_dir / "condition_A.csv"), pd.read_csv(seed_dir / "condition_B.csv")
+        for frame in (a_s, b_s[b_s.query_type == "known"]):
+            njc_ok = (frame.nj_predicted_species.where(~frame.njc_flagged_unknown, "unknown")
+                      == frame.true_species).mean()
+            knn_ok = (frame.knn_k6_predicted_species.where(~frame.knn_k6_flagged_unknown, "unknown")
+                      == frame.true_species).mean()
+            known_gap.append(knn_ok - njc_ok)
 
     # ------------------------------------------------------------ title --
     r.p("", after=60)
@@ -226,24 +246,28 @@ def build(d):
         f"Coenagrionidae from BOLD Systems, we compared a Neighbor-Joining (NJ) tree with an "
         f"explicit identification rule, two machine-learning classifiers on k-mer frequencies "
         f"(k-nearest neighbours and random forest, each with a calibrated 'unknown' threshold), "
-        f"and the classic best-close-match distance rule. With full reference coverage, all "
-        f"methods were equally accurate (NJ {pct(acc['nj'])}, k-NN {pct(acc['knn_k6'])}, random "
-        f"forest {pct(acc['rf_k6'])}; no significant differences). When each of {n_loso} species "
-        f"was removed from the reference set in turn, NJ wrongly named the unknown species for "
-        f"{pct(loso_nj, 0)} of its queries on average, against {pct(loso_knn, 0)} for k-NN, and NJ "
-        f"even placed two species in the wrong genus. Outside a group of {len(sharing)} species "
-        f"that share near-identical barcodes with a relative, k-NN never named a wrong species and "
-        f"still reported the correct genus for {pct(clean_knn_genus, 0)} of unknown queries. "
-        f"Machine learning was also about {speedup:.0f} times faster per query. A best-close-match "
-        f"baseline showed that the safety comes mainly from having a distance cut-off; the "
-        f"machine-learning classifier adds fewer losses on known species. Barcode sharing between "
-        f"close relatives remains a limit that no barcode-only method overcomes.")
+        f"the classic best-close-match distance rule, and the same NJ tree given a calibrated "
+        f"tree-distance 'unknown' cut-off. With full reference coverage, all methods were equally "
+        f"accurate (NJ {pct(acc['nj'])}, k-NN {pct(acc['knn_k6'])}, random forest "
+        f"{pct(acc['rf_k6'])}; no significant differences). When each of {n_loso} species was "
+        f"removed from the reference set in turn, the NJ tree used as usual, without a cut-off, "
+        f"wrongly named the missing species for {pct(loso_nj, 0)} of its queries on average and "
+        f"even placed two species in the wrong genus. With a calibrated 'unknown' cut-off, the same "
+        f"tree wrongly named only {pct(loso_njc, 0)} and k-NN {pct(loso_knn, 0)}. Outside a group "
+        f"of {len(sharing)} species that share near-identical barcodes with a relative, both never "
+        f"named a wrong species and still reported the correct genus. Best close match, a plain "
+        f"distance rule, became just as safe when calibrated the same way. The safety therefore "
+        f"comes from the calibrated cut-off, not from machine learning; k-NN reached it about "
+        f"{speedup:.0f} times faster per query and with slightly fewer losses on known species. "
+        f"Barcode sharing between close relatives remains a limit that no barcode-only method "
+        f"overcomes.")
     r.p("Main finding. ", italic=False, after=4).runs[0].bold = True
     r.doc.paragraphs[-1].add_run(
-        f"Machine learning matched the phylogenetic tree on known species ({pct(acc['knn_k6'], 0)} vs "
-        f"{pct(acc['nj'], 0)}) but wrongly named unknown species over four times less often "
-        f"({pct(loso_knn, 0)} vs {pct(loso_nj, 0)} across {n_loso} species held out one at a time) "
-        f"and was about {speedup:.0f} times faster.")
+        f"The calibrated 'unknown' cut-off, not the choice of method, is what makes identification "
+        f"safe. Without one, the NJ tree wrongly named {pct(loso_nj, 0)} of species missing from "
+        f"the database. With one, the tree and k-NN were both safe ({pct(loso_njc, 0)} and "
+        f"{pct(loso_knn, 0)} across {n_loso} species held out one at a time; 0% outside "
+        f"barcode-sharing groups), and k-NN achieved this about {speedup:.0f} times faster.")
 
     # ---------------------------------------------------------- intro ----
     r.h("1. Introduction")
@@ -272,8 +296,11 @@ def build(d):
     r.bullets([
         "a head-to-head comparison of an NJ tree, k-nearest neighbours (k-NN), random forest (RF) "
         "and the classic best-close-match rule under both conditions, on identical queries;",
-        "an explicit, reproducible identification rule for the tree, and 'unknown' thresholds for "
-        "the other methods calibrated on training data only;",
+        "an explicit, reproducible identification rule for the tree, and 'unknown' cut-offs "
+        "calibrated on training data only for every method, including the tree, so that all "
+        "methods can be compared on equal terms;",
+        "evidence from three independent methods that a calibrated cut-off, not machine learning "
+        "as such, is what makes identification of missing species safe;",
         "robustness checks: species-level confidence intervals and significance tests, threshold "
         "sensitivity, three extra random splits, and holding out every eligible species once;",
         "an analysis of why methods fail, separating ordinary species from species that share "
@@ -334,9 +361,18 @@ def build(d):
         "contains the query and at least one training sequence; if that clade holds training "
         "sequences of more than one species, the query is 'ambiguous' (with a genus if those "
         "species share one).", italic=True)
-    r.p("'Ambiguous' is the tree's only way to abstain; we deliberately gave it no additional "
-        "distance threshold. Building one tree per query was not feasible: Biopython's NJ takes "
-        "about four minutes for 779 sequences.")
+    r.p("Used like this, as trees usually are, 'ambiguous' is the tree's only way to abstain. "
+        "Building one tree per query was not feasible: Biopython's NJ takes about four minutes "
+        "for 779 sequences.")
+    r.p(f"To compare the tree with the classifiers on equal terms, we also evaluated the same tree "
+        f"with an 'unknown' cut-off ('NJ tree + cut-off'). The tree (patristic) distance from a "
+        f"query to its nearest training sequence is compared with a cut-off calibrated on training "
+        f"sequences only, inside the same tree: for every training sequence we take its tree "
+        f"distance to the nearest other training sequence, and the cut-off accepts 95% of these "
+        f"(Condition A cut-off {njt[0.95]:.4f}). A query further away is answered 'unknown', with "
+        f"the clade's genus. No new trees are needed. Both versions of the tree are reported "
+        f"throughout: plain NJ shows how trees are commonly used, and NJ + cut-off gives the fair "
+        f"comparison.")
     r.h("3.3 k-mer features and classifiers", 2)
     r.p("Each unaligned sequence was converted into k-mer frequencies, the share of each possible "
         "run of k bases, for k = 4 (256 features) and k = 6 (4,096 features); each row sums to 1. "
@@ -409,7 +445,7 @@ def build(d):
     r.h("4. Results")
     r.h("4.1 Known species (Condition A)", 2)
     rows = []
-    for m in NAMES:
+    for m in [m for m in NAMES if m != "njc"]:      # NJ + cut-off = NJ without its cut-off here
         c = ci.loc[("A_correct", m)]
         rows.append([NAMES[m], pct(acc[m]), f"{pct(c.ci_low, 0)}–{pct(c.ci_high, 0)}",
                      pct(sA.macro_precision[m]), pct(sA.macro_recall[m]),
@@ -421,7 +457,7 @@ def build(d):
             [3.4, 2.1, 2.3, 2.3, 2.1, 2.2])
     f_acc = r.n_fig + 1
     r.p(f"All four classifiers and the NJ tree identified known species with about the same "
-        f"accuracy ({rng([acc[m] for m in NAMES if m != 'bcm'])}; Table 2, Figure {f_acc}). No "
+        f"accuracy ({rng([acc[m] for m in NAMES if m not in ('bcm', 'njc')])}; Table 2, Figure {f_acc}). No "
         f"pair differs significantly (all Holm-corrected McNemar p = "
         f"{sig_A[sig_A.method_1 == 'nj'].holm_p.min():.2f}), and every species-bootstrap interval "
         f"of a difference between NJ and a classifier includes zero. Best close match was lower "
@@ -442,7 +478,7 @@ def build(d):
     rows = []
     for m in NAMES:
         b = b_main[m]
-        rows.append([NAMES[m] + ("" if m == "nj" else " (cut-off)"),
+        rows.append([NAMES[m] + ("" if m in ("nj", "njc") else " (cut-off)"),
                      pct(b.unknown_false_assignment_rate), pct(b.unknown_other_genus_rate),
                      pct(b.unknown_flagged_rate), pct(b.unknown_flagged_correct_genus_rate),
                      pct(b.known_accuracy)])
@@ -454,7 +490,7 @@ def build(d):
     b_nj, b_knn, b_rf = b_main["nj"], b_main["knn_k6"], b_main["rf_k6"]
     rf_raw_other = [sb.loc[(m, "no threshold")].unknown_other_genus_rate for m in ["rf_k4", "rf_k6"]]
     r.p(f"For species missing from the database, the methods behaved very differently (Table 3, "
-        f"Figure {r.n_fig + 1}). The NJ tree named a wrong species for "
+        f"Figure {r.n_fig + 1}). The plain NJ tree named a wrong species for "
         f"{pct(b_nj.unknown_false_assignment_rate)} of unknown queries. It always chose a species "
         f"of the correct genus and abstained only when the nearest clade mixed several species. "
         f"Without a threshold, the classifiers named a known species for every unknown query, "
@@ -462,18 +498,25 @@ def build(d):
         f"calibrated threshold, k-NN flagged every unknown query, and for k = 6 it reported the "
         f"correct genus for all of them. Random forest flagged "
         f"{rng([b_main[m].unknown_flagged_rate for m in ['rf_k4', 'rf_k6']])}, and best close "
-        f"match with Meier's cut-off flagged {pct(b_main['bcm'].unknown_flagged_rate)}.")
+        f"match with Meier's cut-off flagged {pct(b_main['bcm'].unknown_flagged_rate)}. Given a "
+        f"calibrated cut-off, the NJ tree also flagged "
+        f"{pct(b_main['njc'].unknown_flagged_rate)} of unknown queries, all with the correct "
+        f"genus: the same tree that named a wrong species two times out of three without a "
+        f"cut-off became as safe as k-NN.")
     r.figure("condition_B_outcomes.png", "What each method answers for species not in the "
              "database (Condition B, main run). Green: flagged 'unknown' or abstained (dark green "
              "with the correct genus). Yellow: a wrong species of the correct genus. Red: a wrong "
              "species of another genus.", 15.5)
-    r.p(f"The NJ-versus-classifier difference is large and robust. NJ named a species "
+    njc_vs_knn = sig_B[(sig_B.method_1 == "njc") & (sig_B.method_2 == "knn_k6")].iloc[0]
+    r.p(f"The difference between plain NJ and the thresholded classifiers is large and robust. "
+        f"Plain NJ named a species "
         f"{pct(nj_vs_ml_B.difference.min(), 0)}–{pct(nj_vs_ml_B.difference.max(), 0)} more often "
-        f"than the thresholded classifiers (Holm p < 0.0001; species-bootstrap lower bound "
-        f"+{pct(nj_vs_ml_B.diff_ci_low.min(), 0)}). Safety has a price: with the threshold on, "
-        f"the classifiers rejected some known species too, reaching "
-        f"{rng([b_main[m].known_accuracy for m in ['knn_k4', 'knn_k6', 'rf_k4', 'rf_k6']])} "
-        f"correct on known queries against {pct(b_nj.known_accuracy)} for NJ. Figure "
+        f"(Holm p < 0.0001; species-bootstrap lower bound "
+        f"+{pct(nj_vs_ml_B.diff_ci_low.min(), 0)}), while NJ + cut-off and k-NN did not differ "
+        f"at all (difference {pct(njc_vs_knn.difference)}). Safety has a price: with a cut-off on, "
+        f"every method rejected some known species too, reaching "
+        f"{rng([b_main[m].known_accuracy for m in ['knn_k4', 'knn_k6', 'rf_k4', 'rf_k6', 'njc']])} "
+        f"correct on known queries against {pct(b_nj.known_accuracy)} for plain NJ. Figure "
         f"{r.n_fig + 1} shows the same trade-off from full to incomplete coverage.")
     r.figure("A_vs_B.png", "From full to incomplete coverage: correct answers on known species "
              "(Condition A, with each method's cut-off) against unknown species safely flagged "
@@ -503,19 +546,25 @@ def build(d):
         f"{pct(L('all', 'knn_k6', 'species_never_wrongly_named'), 0)} of species. Among the "
         f"{n_clean} species that do not share their barcode, k-NN never named a wrong species "
         f"for a single query, with either k, and reported the correct genus for "
-        f"{pct(clean_knn_genus)}; NJ wrongly named {pct(clean_nj)}. NJ also placed two species "
-        f"in the wrong genus, {wg}: each was placed next to the other. No classifier and no "
-        f"best-close-match answer named a wrong genus in this analysis.")
+        f"{pct(clean_knn_genus)}; plain NJ wrongly named {pct(clean_nj)}. Plain NJ also placed "
+        f"two species in the wrong genus, {wg}: each was placed next to the other. With its "
+        f"cut-off, the tree wrongly named {pct(loso_njc)} of queries overall and "
+        f"{pct(clean_njc)} outside the barcode-sharing groups, and the two wrong-genus "
+        f"placements were flagged 'unknown' instead. NJ + cut-off and k-NN were the two safest "
+        f"methods ({rng(loso_cut)}); the tree was slightly safer on barcode-sharing species "
+        f"({pct(share_njc, 0)} against {pct(share_knn, 0)} wrongly named). No method with a "
+        f"cut-off named a wrong genus in this analysis.")
     r.figure("loso_per_species.png", "Every species held out once: share of its queries given a "
              "wrong species name, by method. Shaded rows (*) are barcode-sharing species.", 15.5)
 
     r.h("4.4 Robustness to splits and thresholds", 2)
     r.p(f"Across the four random Condition B draws, the share of unknown queries wrongly named "
-        f"ranged from {rng(reps.B_false_assign_nj)} for NJ, {rng(reps.B_false_assign_knn_k6)} for "
+        f"ranged from {rng(reps.B_false_assign_nj)} for plain NJ, "
+        f"{rng(reps.B_false_assign_njc)} for NJ + cut-off, {rng(reps.B_false_assign_knn_k6)} for "
         f"k-NN (k = 6), {rng(reps.B_false_assign_rf_k6)} for random forest (k = 6) and "
-        f"{rng(reps.B_false_assign_bcm)} for best close match. k-NN was the safest method in all "
-        f"four. The wide ranges come from which species happen to be drawn, as Section 4.5 "
-        f"explains.")
+        f"{rng(reps.B_false_assign_bcm)} for best close match. NJ + cut-off or k-NN was the "
+        f"safest method in every draw, and plain NJ never was. The wide ranges come from which "
+        f"species happen to be drawn, as Section 4.5 explains.")
     knn99 = sb.loc[("knn_k6", "accept 99%")]
     rf99 = [sb.loc[(m, "accept 99%")].unknown_flagged_rate for m in ["rf_k4", "rf_k6"]]
     r.p(f"The threshold matters less for k-NN than for random forest (Figure {r.n_fig + 1}). Even "
@@ -524,7 +573,8 @@ def build(d):
         f"{rng(rf99)}. Lower thresholds catch more unknown species but reject more known ones.")
     r.figure("threshold_curve.png", "Threshold sensitivity (Condition B, main run). Lines: every "
              "possible cut-off; markers: cut-offs calibrated to accept 90%, 95% and 99% of known "
-             "species (best close match also: Meier's cut-off). NJ has no threshold.", 14.5)
+             "species (best close match also: Meier's cut-off). The blue diamond is plain NJ, "
+             "which has no cut-off.", 14.5)
 
     r.h("4.5 Why methods fail: barcode sharing", 2)
     ss = d["sharing_split"]
@@ -546,16 +596,34 @@ def build(d):
 
     r.h("4.6 Where does the safety come from?", 2)
     b95 = sb.loc[("bcm", "accept 95%")]
-    r.p(f"Best close match is a distance rule with no learning. With Meier's cut-off it wrongly "
-        f"named {pct(b_main['bcm'].unknown_false_assignment_rate)} of unknown queries in the main "
-        f"run and {rng(reps.B_false_assign_bcm)} across draws, so it was less safe than k-NN in "
-        f"three of four. Calibrated in the same way as k-NN, however, best close match also "
-        f"flagged {pct(b95.unknown_flagged_rate)} of unknown queries. The safety therefore comes "
-        f"mainly from having a distance cut-off rather than from machine learning as such. What "
-        f"k-NN adds is fewer losses on known species: at the same safety it kept "
-        f"{pct(b_knn.known_accuracy)} of known queries correct against "
-        f"{pct(b95.known_accuracy)} for best close match. k-NN's vote among five neighbours "
-        f"resolves many queries that best close match calls ambiguous.")
+    r.p(f"Three independent lines of evidence point to the same answer: the safety comes from a "
+        f"calibrated 'unknown' cut-off, not from machine learning as such.")
+    r.bullets([
+        ("A plain distance rule. ",
+         f"Best close match has no learning. With Meier's cut-off it wrongly named "
+         f"{pct(b_main['bcm'].unknown_false_assignment_rate)} of unknown queries in the main run "
+         f"and {rng(reps.B_false_assign_bcm)} across draws. Calibrated in the same way as k-NN, it "
+         f"also flagged {pct(b95.unknown_flagged_rate)} of unknown queries."),
+        ("The same tree with a cut-off. ",
+         f"Plain NJ wrongly named {pct(loso_nj, 0)} of missing species across {n_loso} species; "
+         f"with a calibrated tree-distance cut-off it wrongly named {pct(loso_njc, 0)}, slightly "
+         f"fewer than k-NN ({pct(loso_knn, 0)})."),
+        ("The threshold curves. ",
+         "Across every possible cut-off, the curves of NJ + cut-off and k-NN almost overlap "
+         "(Figure 5): at the same rate of wrongly rejected known species, they catch about the "
+         "same share of unknown species."),
+    ])
+    r.p(f"What, then, does machine learning add? First, speed (Section 4.7). Second, a slightly "
+        f"better balance at its calibrated cut-off. With cut-offs on, k-NN kept more known species "
+        f"correct than NJ + cut-off in all {len(known_gap)} seed-and-condition comparisons, by "
+        f"{100 * min(known_gap):.1f}–{100 * max(known_gap):.1f} percentage points. These "
+        f"differences are not significant "
+        f"individually, and since the threshold curves overlap, they reflect where each calibration "
+        f"placed its cut-off (the in-tree calibration chose a stricter one), not a better ability "
+        f"to tell known from unknown. Against best close match, k-NN's advantage is clearer: at the "
+        f"same safety it kept {pct(b_knn.known_accuracy)} of known queries correct against "
+        f"{pct(b95.known_accuracy)}, because its vote among five neighbours resolves many queries "
+        f"that best close match calls ambiguous.")
 
     r.h("4.7 Speed", 2)
     r.p(f"Per query, the NJ pipeline took {nj_ms:,.0f} ms, best close match {bcm_ms:.0f} ms, and "
@@ -573,25 +641,26 @@ def build(d):
     r.h("5. Discussion")
     r.p("On species that are in the reference database, the choice of method hardly matters: all "
         "methods identified about nine in ten queries correctly, and their errors were the same "
-        "unavoidable confusions between barcode-sharing species. The choice matters when the "
-        "database is incomplete. A phylogenetic tree has no natural way to say 'this species is "
-        "not here'. With our rule, it answered with the nearest species in most cases, and twice "
-        "even with a species of another genus. It abstained only when the neighbouring clade "
-        "happened to contain several species.")
-    r.p("Machine-learning classifiers without a threshold are no better: they always name a "
-        "known species. The decisive ingredient is an explicit 'unknown' cut-off calibrated on "
-        "known species. With it, k-NN never named a wrong species outside the barcode-sharing "
-        "groups and kept the useful part of the tree's answer, the genus. Our best-close-match "
-        "baseline shows that this safety is mainly a property of the cut-off, not of machine "
-        "learning. The classifier's added value is that it loses fewer known species at the same "
-        "level of safety. Random forest was less safe than k-NN, because its probabilities "
-        "spread over related species and do not directly measure how far a query is from the "
-        "references.")
-    r.p("For practical identification we therefore recommend a distance-aware method with a "
-        "calibrated 'unknown' threshold, here k-NN on k-mer frequencies, rather than reading a "
-        "species name off a tree. Answers that fall within a barcode-sharing group should be "
-        "reported at genus or species-group level. A tree remains useful for exploring "
-        "relationships, but it should not be the source of a species name for an unknown query.")
+        "unavoidable confusions between barcode-sharing species. When the database is "
+        "incomplete, what matters is not the method but whether it has a calibrated way to say "
+        "'this species is not here'. A phylogenetic tree used as usual has none. With our rule it "
+        "answered with the nearest species in most cases, twice even with a species of another "
+        "genus, and abstained only when the neighbouring clade happened to contain several "
+        "species. Machine-learning classifiers without a threshold are no better: they always "
+        "name a known species.")
+    r.p("Once every method is given an 'unknown' cut-off calibrated on known species, the "
+        "picture changes. The tree, k-NN and even a plain distance rule all became safe, and "
+        "outside the barcode-sharing groups the tree and k-NN never named a wrong species. They "
+        "also kept the useful part of the tree's answer, the genus. Random forest remained "
+        "somewhat less safe, because its probabilities spread over related species and do not "
+        "directly measure how far a query is from the references. Methods that measure distance "
+        "(k-NN, best close match and the tree) are the natural basis for an 'unknown' answer.")
+    r.p("Our central recommendation is therefore method-independent: whichever identification "
+        "method is used, add a calibrated 'unknown' cut-off. Without one, the tree named a wrong "
+        "species for two thirds of missing species; with one, wrong names fell to about one in "
+        "ten. If speed matters, k-NN on k-mer frequencies is the practical choice, because it "
+        "reaches the same safety hundreds of times faster. Answers that fall within a "
+        "barcode-sharing group should be reported at genus or species-group level.")
 
     r.p(f"Our results agree with earlier work on this group and on barcoding in general. The "
         f"European Odonata reference study (PeerJ, 2021) found that most species are "
@@ -599,9 +668,11 @@ def build(d):
         f"ten for known species and the same problem groups. Meier et al. (2006) introduced best "
         f"close match because tree-based identification overstates success. Our finding that a "
         f"distance cut-off is what makes identification safe extends their argument to the case "
-        f"of missing species. The machine-learning studies in our reference list report high "
-        f"accuracy on known species. Our results suggest that such accuracy says little about "
-        f"behaviour on species outside the training set, which needs to be tested explicitly.")
+        f"of missing species, and shows that the same fix works for the tree itself. The "
+        f"machine-learning studies in our reference list report high accuracy on known species. "
+        f"Our results suggest that such accuracy says little about behaviour on species outside "
+        f"the training set, which needs to be tested explicitly, and that comparisons between "
+        f"trees and classifiers should give both the same chance to answer 'unknown'.")
     r.p("A further practical difference concerns how each method scales. A classifier is "
         "trained once and then answers each new query in milliseconds, and adding reference "
         "sequences only needs retraining, which took about a second here. A tree must be rebuilt "
@@ -616,10 +687,11 @@ def build(d):
          f"sequences, and Condition B per draw rests on eight species."),
         ("Barcode sharing. ", f"{len(sharing)} species share BINs with relatives. No barcode-only "
          f"method can separate them, and they cause almost all errors."),
-        ("Tree method not fully like-for-like. ", "By design NJ received no extra 'unknown' "
-         "threshold; a distance threshold on the tree could make it safer. We used a single NJ "
-         "tree for all queries, not one tree per query, and did not test maximum-likelihood "
-         "trees."),
+        ("Calibration of the tree cut-off. ", "The tree's cut-off was calibrated inside the same "
+         "tree on training sequences, while the classifiers used cross-validation; the two "
+         "procedures placed their cut-offs at slightly different points of the trade-off. We "
+         "used a single NJ tree for all queries, not one tree per query, and did not test "
+         "maximum-likelihood trees."),
         ("Label quality. ", "We trust BOLD identifications apart from two cross-genus mislabels; "
          "remaining mislabels within genera would count as method errors."),
         ("Statistics. ", "McNemar tests treat queries as independent, which they are not; we "
@@ -628,12 +700,14 @@ def build(d):
     ])
 
     r.h("7. Conclusion")
-    r.p(f"Machine learning matched the phylogenetic tree on known species "
-        f"({pct(acc['knn_k6'], 0)} vs {pct(acc['nj'], 0)}) but wrongly named unknown species over "
-        f"four times less often ({pct(loso_knn, 0)} vs {pct(loso_nj, 0)} across {n_loso} species "
-        f"held out one at a time) and was about {speedup:.0f} times faster. The safety comes "
-        f"mainly from a calibrated distance cut-off. Barcode sharing between close relatives "
-        f"remains the limit that no barcode-only method overcomes.")
+    r.p(f"Which method should be trusted when the species is not in the database? Not the "
+        f"method alone. Without an 'unknown' cut-off, the NJ tree wrongly named {pct(loso_nj, 0)} "
+        f"of species missing from the database; with a calibrated cut-off, the tree and k-NN were "
+        f"both safe ({pct(loso_njc, 0)} and {pct(loso_knn, 0)} across {n_loso} species held out "
+        f"one at a time, and 0% outside barcode-sharing groups), and k-NN achieved this about "
+        f"{speedup:.0f} times faster. Whichever method is used, a calibrated 'unknown' cut-off "
+        f"should be part of it. Barcode sharing between close relatives remains the limit that "
+        f"no barcode-only method overcomes.")
 
     # ----------------------------------------------------- references ----
     r.h("References")
